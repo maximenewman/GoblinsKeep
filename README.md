@@ -56,8 +56,8 @@ To run the unit and integration tests, use the following command:
 
 ## Authors
 Developed with love by:
-- Hugo Najafi
 - Maxime Nereyabagabo
+- Hugo Najafi
 - Arun Paudel
 - Srinivas Suggu
 
