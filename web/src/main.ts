@@ -6,8 +6,8 @@ import { TileManager } from "./tile/TileManager.ts";
 const WORLD_COL = 60;
 const WORLD_ROW = 66;
 const TILE_SIZE = 48;
-const SCREEN_WIDTH = 768;
-const SCREEN_HEIGHT = 576;
+const SCREEN_WIDTH = 768;   // 16 tiles wide
+const SCREEN_HEIGHT = 432;  // 9 tiles tall — Pokemon-style zoom on the player
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d");

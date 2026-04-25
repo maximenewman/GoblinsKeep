@@ -20,6 +20,7 @@
         margin: 0;
         background: black;
         height: 100%;
+        overflow: hidden;
       }
       body {
         display: flex;
@@ -27,12 +28,16 @@
         justify-content: center;
       }
       #game {
+        /* Scale the 768x432 internal resolution (16x9 tiles, Pokemon-style
+           zoom into the player) to fill the viewport while preserving 16:9. */
+        width: min(100vw, calc(100vh * 16 / 9));
+        height: min(100vh, calc(100vw * 9 / 16));
         image-rendering: pixelated;
       }
     </style>
   </head>
   <body>
-    <canvas id="game" width="768" height="576"></canvas>
+    <canvas id="game" width="768" height="432"></canvas>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
