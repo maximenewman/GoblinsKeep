@@ -94,6 +94,7 @@ public class InstructionsUI extends DefaultUI{
         messages.add("After getting trapped in the Goblin kings maze-like castle,");
         messages.add("you must now find your way out and escape to the woods");
         messages.add("MOVEMENT: WASD or Arrow Keys to move UP,LEFT,DOWN,RIGHT");
+        messages.add("MUSIC: Press M to toggle background music on/off");
         messages.add("HOW TO ESCAPE: ");
         messages.add("Collect the 5 key fragments to unlock the lever");
         messages.add("After the lever is unlocked find it and activate it to open the escape door");

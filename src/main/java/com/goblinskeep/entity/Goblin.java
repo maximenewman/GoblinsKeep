@@ -27,7 +27,7 @@ public abstract class Goblin extends Entity{
     public int LOSradius = 120;
 
     /** Manhattan tile distance beyond which a chasing goblin gives up if it has lost line of sight. */
-    private static final int DISENGAGE_TILE_DISTANCE = 10;
+    private static final int DISENGAGE_TILE_DISTANCE = 15;
 
     /**
      * Constructs a goblin with references to the game panel and player.

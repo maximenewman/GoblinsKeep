@@ -40,6 +40,11 @@ public class App
         // Center the window on the screen
         window.setLocationRelativeTo(null);
 
+        // Enable music and start the menu loop. Done here (not in the GamePanel
+        // constructor) so unit tests can construct a GamePanel silently.
+        gamepanel.musicEnabled = true;
+        gamepanel.playMusic(Sound.MAIN_MENU);
+
         // Start the game loop/thread
         gamepanel.startGameThread();
 
