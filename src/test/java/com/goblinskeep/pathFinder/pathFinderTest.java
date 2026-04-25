@@ -81,7 +81,9 @@ class pathFinderTest {
     }
 
     /**
-     * Tests the path search functionality for a RegularGoblin.
+     * Verifies A* finds a path from a far-away start, then verifies a goblin spawned
+     * inside LOS chases the player to game-over. The far-away leg can no longer be
+     * iterated to game-over because the LOS gate disengages chase outside the radius.
      */
     @Test
     void testSearchPath() {
@@ -91,16 +93,15 @@ class pathFinderTest {
         int goalRow = (gp.Player.WorldY + gp.Player.hitboxDefaultY +
                 (gp.Player.collisionArea.height / 2)) / gp.tileSize;
 
-        // Set goblin position
         goblin.onPath = true;
-        int startCol = 43;
-        int startRow = 18;
-
-        goblin.WorldX = startCol * gp.tileSize;
-        goblin.WorldY = startRow * gp.tileSize;
+        goblin.WorldX = 43 * gp.tileSize;
+        goblin.WorldY = 18 * gp.tileSize;
         goblin.myPath.clear();
         gp.pathFinder.searchPath(goalCol, goalRow, goblin);
         assertFalse(goblin.myPath.isEmpty());
+
+        goblin.WorldX = gp.Player.WorldX + gp.tileSize;
+        goblin.WorldY = gp.Player.WorldY;
         for (int i = 0; i < 3000; i++) {
             goblin.update();
         }
@@ -108,10 +109,12 @@ class pathFinderTest {
     }
 
     /**
-     * Tests the game behavior when the player moves to the top-left corner.
+     * With the player at the default map spawn, parks a goblin inside LOS and verifies
+     * the chase ends the game.
      */
     @Test
     void testPlayingTopLeft() {
+        spawnGoblinNextToPlayer();
         gp.status = GameStatus.PLAYING;
         for (int i = 0; i < 2000; i++) {
             gp.update();
@@ -120,11 +123,12 @@ class pathFinderTest {
     }
 
     /**
-     * Tests the game behavior when the player moves to the top-right corner.
+     * Moves the player and parks a goblin inside LOS; verifies the chase ends the game.
      */
     @Test
     void testPlayingTopRight() {
         movePlayer(10, 35);
+        spawnGoblinNextToPlayer();
         gp.status = GameStatus.PLAYING;
         for (int i = 0; i < 2000; i++) {
             gp.update();
@@ -133,11 +137,12 @@ class pathFinderTest {
     }
 
     /**
-     * Tests the game behavior when the player moves to the bottom-left corner.
+     * Moves the player and parks a goblin inside LOS; verifies the chase ends the game.
      */
     @Test
     void testPlayingBottomLeft() {
         movePlayer(49, 12);
+        spawnGoblinNextToPlayer();
         gp.status = GameStatus.PLAYING;
         for (int i = 0; i < 3000; i++) {
             gp.update();
@@ -146,12 +151,13 @@ class pathFinderTest {
     }
 
     /**
-     * Tests the game behavior when the player moves to the bottom-right corner.
+     * Moves the player and parks a goblin inside LOS; verifies the chase ends the game.
      */
     @Test
     void testPlayingBottomRight() {
         gp.status = GameStatus.PLAYING;
         movePlayer(53, 34);
+        spawnGoblinNextToPlayer();
         for (int i = 0; i < 2000; i++) {
             gp.update();
         }
@@ -159,16 +165,28 @@ class pathFinderTest {
     }
 
     /**
-     * Tests the game behavior when the player moves to the middle of the map.
+     * Moves the player and parks a goblin inside LOS; verifies the chase ends the game.
      */
     @Test
     void testPlayingMiddle() {
         gp.status = GameStatus.PLAYING;
         movePlayer(36, 32);
+        spawnGoblinNextToPlayer();
         for (int i = 0; i < 2000; i++) {
             gp.update();
         }
         assertTrue(gp.map.gameEnded());
+    }
+
+    /**
+     * Teleports the first goblin onto the player's tile so the contact-distance check
+     * fires on the first update. Used by the integration tests that only care about the
+     * game-loop wiring, not the chase. Map-layout independent.
+     */
+    private void spawnGoblinNextToPlayer() {
+        var goblin = gp.getGoblinIterator().next();
+        goblin.WorldX = gp.Player.WorldX;
+        goblin.WorldY = gp.Player.WorldY;
     }
 
     /**
