@@ -1,5 +1,7 @@
 import { MapGenerator, type MapBuilder } from "./app/MapGenerator.ts";
+import { ObjectManager } from "./objects/ObjectManager.ts";
 import { Camera } from "./render/Camera.ts";
+import { drawObjects } from "./render/drawObjects.ts";
 import { drawTileMap } from "./render/drawTileMap.ts";
 import { TileManager } from "./tile/TileManager.ts";
 
@@ -17,19 +19,29 @@ if (!ctx) {
 ctx.imageSmoothingEnabled = false;
 
 const tileM = new TileManager(WORLD_COL, WORLD_ROW);
-const spawnState: { player: { col: number; row: number } | null } = { player: null };
+const objectM = new ObjectManager(TILE_SIZE);
 
-// MapBuilder routes spawns. Object spawns are dropped this turn — the next
-// commit wires them through ObjectManager so they actually render.
+interface TileSpawn { col: number; row: number; }
+const spawnState: { player: TileSpawn | null; goblins: TileSpawn[] } = {
+  player: null,
+  goblins: [],
+};
+
+// Player and goblin classes don't exist yet — capture their spawns now and
+// draw placeholder rectangles. Object spawns route through ObjectManager.
 const builder: MapBuilder = {
   onPlayerSpawn(col, row) {
     spawnState.player = { col, row };
   },
-  onGoblinSpawn() {},
-  onObjectSpawn() {},
+  onGoblinSpawn(col, row) {
+    spawnState.goblins.push({ col, row });
+  },
+  onObjectSpawn(col, row, spawn) {
+    objectM.spawn(col, row, spawn);
+  },
 };
 
-await tileM.loadTiles();
+await Promise.all([tileM.loadTiles(), objectM.loadSprites()]);
 
 const mapText = await fetch("/maps/world1.txt").then((r) => r.text());
 const mapGen = new MapGenerator(tileM, builder);
@@ -46,3 +58,19 @@ const camera = new Camera(
 ctx.fillStyle = "black";
 ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 drawTileMap(ctx, tileM, camera);
+drawObjects(ctx, objectM, camera);
+
+// Placeholder markers until Player/Goblin classes are ported.
+const drawSpawnMarker = (col: number, row: number, color: string): void => {
+  const x = camera.toScreenX(col * TILE_SIZE);
+  const y = camera.toScreenY(row * TILE_SIZE);
+  ctx.fillStyle = color;
+  ctx.fillRect(x + 8, y + 8, TILE_SIZE - 16, TILE_SIZE - 16);
+};
+
+if (spawnState.player) {
+  drawSpawnMarker(spawnState.player.col, spawnState.player.row, "#3b82f6");
+}
+for (const goblin of spawnState.goblins) {
+  drawSpawnMarker(goblin.col, goblin.row, "#ef4444");
+}
