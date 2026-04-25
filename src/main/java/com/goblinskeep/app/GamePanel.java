@@ -72,6 +72,8 @@ public class GamePanel extends JPanel implements Runnable
     /** List of goblins (enemy entities) in the game. */
     public ArrayList<Goblin> goblins;
 
+    /** Background-music player. Tracks the {@link GameStatus} state machine. */
+    public Sound sound = new Sound();
 
     /** Object manager responsible for handling interactable objects. */
     public ObjectManager obj;
@@ -84,6 +86,9 @@ public class GamePanel extends JPanel implements Runnable
 
     /** Represents the current game state. */
     public GameStatus status;
+
+    /** Previous game state, used to detect transitions for music dispatch. */
+    private GameStatus previousStatus;
 
     /** The game's map generator, responsible for setting up the environment. */
     public MapHandler map;
@@ -99,6 +104,14 @@ public class GamePanel extends JPanel implements Runnable
 
     /** used to trigger debugMode. */
     public boolean debugMode;
+
+    /**
+     * Whether background music is allowed to play. Toggled by the M key.
+     * Defaults to {@code false} so unit tests that construct GamePanel — and tests that
+     * drive {@code update()} through state transitions — don't allocate audio lines or
+     * emit sound. {@link App#main(String[])} flips this on at startup.
+     */
+    public boolean musicEnabled = false;
     /**
      * Constructs a new GamePanel, initializing the game screen, input handlers, and game state.
      */
@@ -113,7 +126,9 @@ public class GamePanel extends JPanel implements Runnable
         MenuInputHandler keyboard = new MenuInputHandler(this);
         this.addKeyListener(keyboard);
 
-        // Set the initial game state to the main menu
+        // Set the initial game state to the main menu. Music is kicked off by App.main
+        // after construction so test environments don't allocate audio resources.
+        previousStatus = null;
         status = GameStatus.MENU;
         setGame();
 
@@ -182,6 +197,10 @@ public class GamePanel extends JPanel implements Runnable
      * This method is called in each iteration of the game loop.
      */
     public void update(){
+        if (status != previousStatus) {
+            onStatusChanged(previousStatus, status);
+            previousStatus = status;
+        }
         if (status == GameStatus.PLAYING) {
             if (map.gameEnded()){
                 status = GameStatus.END;
@@ -197,6 +216,78 @@ public class GamePanel extends JPanel implements Runnable
         } else if (status == GameStatus.RESTART){
             restartGame();
             status = GameStatus.PLAYING;
+        }
+    }
+
+    /**
+     * Dispatches music transitions when the game status changes.
+     * INSTRUCTIONS doesn't restart the menu loop on the way back so the player isn't
+     * jarred by an audio reset. PAUSED pauses the current clip; PLAYING resumes when
+     * coming from PAUSED (preserves position) and otherwise loads the gameplay loop.
+     */
+    private void onStatusChanged(GameStatus oldStatus, GameStatus newStatus) {
+        switch (newStatus) {
+            case MENU:
+                if (oldStatus != GameStatus.INSTRUCTIONS) {
+                    stopMusic();
+                    playMusic(Sound.MAIN_MENU);
+                }
+                break;
+            case PLAYING:
+                if (oldStatus == GameStatus.PAUSED) {
+                    resumeMusic();
+                } else {
+                    stopMusic();
+                    playMusic(Sound.INTRO);
+                }
+                break;
+            case PAUSED:
+            case END:
+                pauseMusic();
+                break;
+            case INSTRUCTIONS:
+            case RESTART:
+                break;
+        }
+    }
+
+    /** Loads slot {@code i} from {@link Sound} and loops it. No-op when music is disabled. */
+    public void playMusic(int i) {
+        if (!musicEnabled) {
+            return;
+        }
+        sound.setFile(i);
+        sound.loop();
+    }
+
+    /** Stops and unloads the current background clip. */
+    public void stopMusic() {
+        sound.stop();
+    }
+
+    /** Pauses the current clip while remembering its position. */
+    public void pauseMusic() {
+        sound.pause();
+    }
+
+    /** Resumes a paused clip from where {@link #pauseMusic()} left off (if music is enabled). */
+    public void resumeMusic() {
+        if (musicEnabled) {
+            sound.resume();
+        }
+    }
+
+    /**
+     * Flips the {@link #musicEnabled} flag. Disabling pauses the current clip; enabling
+     * restarts the currently loaded loop from the start (position-reset is acceptable for
+     * an ambient background loop and avoids carrying stale positions across state changes).
+     */
+    public void toggleMusic() {
+        musicEnabled = !musicEnabled;
+        if (musicEnabled) {
+            sound.loop();
+        } else {
+            sound.pause();
         }
     }
 

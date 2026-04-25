@@ -63,6 +63,9 @@ public class MenuInputHandler implements KeyListener {
                     gp.status = GameStatus.PLAYING;
                 }
                 break;
+            case KeyEvent.VK_M:
+                gp.toggleMusic();
+                break;
             case KeyEvent.VK_SPACE:
             case KeyEvent.VK_ENTER:
             case KeyEvent.VK_UP:
