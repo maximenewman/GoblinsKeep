@@ -88,3 +88,5 @@ $RECYCLE.BIN/
 ### System & Miscellaneous ###
 # macOS system files
 .DS_Store
+
+.claude/
