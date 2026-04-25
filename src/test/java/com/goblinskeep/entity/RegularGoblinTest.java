@@ -68,25 +68,31 @@ public class RegularGoblinTest {
     }
 
     /**
-     * Simulates goblin movement to the left and checks if the game ends.
+     * Places the goblin one tile east of the player (inside LOS), then iterates updates
+     * until the goblin's chase closes the gap and ends the game.
      */
     @Test
     void simulateMovementLeft(){
-         Goblin goblin = gp.getGoblinIterator().next();
-         for (int i = 0; i < 2000; i++){
-             goblin.update();
-         }
+        Goblin goblin = gp.getGoblinIterator().next();
+        goblin.WorldX = gp.Player.WorldX + gp.tileSize;
+        goblin.WorldY = gp.Player.WorldY;
+        for (int i = 0; i < 2000; i++){
+            goblin.update();
+        }
         assertTrue(gp.map.gameEnded());
     }
 
     /**
-     * Simulates goblin movement to the right and checks if the game ends.
+     * Repositions the player and spawns the goblin one tile east of them (inside LOS),
+     * then iterates updates until the chase ends the game.
      */
     @Test
     void simulateMovementRight(){
         gp.Player.WorldX = 35 * gp.tileSize;
         gp.Player.WorldY = 10 * gp.tileSize;
         Goblin goblin = gp.getGoblinIterator().next();
+        goblin.WorldX = gp.Player.WorldX + gp.tileSize;
+        goblin.WorldY = gp.Player.WorldY;
         for (int i = 0; i < 2000; i++){
             goblin.update();
         }

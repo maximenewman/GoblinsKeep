@@ -2,6 +2,8 @@ package com.goblinskeep.entity;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Random;
+import com.goblinskeep.app.Direction;
 import com.goblinskeep.app.GamePanel;
 import com.goblinskeep.pathFinder.Node;
 
@@ -14,6 +16,11 @@ public class RegularGoblin extends Goblin {
      * The path that the goblin follows.
      */
     public ArrayList<Node> myPath = new ArrayList<>();
+
+    /** Ticks the goblin must wait between random direction changes. */
+    private static final int RANDOM_DIRECTION_INTERVAL = 75;
+
+    private final Random random = new Random();
 
     /**
      * Constructs a RegularGoblin with the specified GamePanel and Player.
@@ -32,26 +39,64 @@ public class RegularGoblin extends Goblin {
     }
 
     /**
-     * Determines the action of the regular goblin, including random movement or pathfinding.
+     * Determines the action of the regular goblin. When the player is being chased
+     * ({@code onPath}), runs A* toward the player's current tile. Otherwise wanders
+     * randomly. Either way, applies the resulting direction and moves.
      */
     @Override
     public void getAction() {
-        //find player coordinate and get direction to it using pathfinding
-        Point goalCoordinates = gp.Player.getCenterTileCoordinates();
-        gp.pathFinder.searchPath(goalCoordinates.x, goalCoordinates.y, this);
+        if (onPath) {
+            Point goalCoordinates = gp.Player.getCenterTileCoordinates();
+            gp.pathFinder.searchPath(goalCoordinates.x, goalCoordinates.y, this);
+        } else {
+            randomMovement();
+        }
         drawDirection = direction;
-
-        //Move along Path
         moveAlongPath();
     }
 
     /**
-     * Moves the regular goblin along the path found by the pathfinder.
+     * Resolves collisions for this tick, then moves the goblin in its current direction.
+     * During random wandering, a tile collision flips the direction so the goblin bounces
+     * off walls instead of standing still until the next direction roll.
      */
     private void moveAlongPath(){
         collisionOn = false;
         checkCollisions();
+        if (collisionOn && !onPath) {
+            reverseDirection();
+            collisionOn = false;
+        }
         moveEntityTowardDirection();
+    }
+
+    /**
+     * Picks a fresh random cardinal direction every {@link #RANDOM_DIRECTION_INTERVAL}
+     * ticks. The first {@code RANDOM_DIRECTION_INTERVAL - 1} calls are no-ops so the
+     * goblin commits to a heading instead of jittering each frame.
+     */
+    private void randomMovement() {
+        actionLockCounter++;
+        if (actionLockCounter < RANDOM_DIRECTION_INTERVAL) {
+            return;
+        }
+        actionLockCounter = 0;
+        direction = switch (random.nextInt(4)) {
+            case 0 -> Direction.UP;
+            case 1 -> Direction.DOWN;
+            case 2 -> Direction.LEFT;
+            default -> Direction.RIGHT;
+        };
+    }
+
+    private void reverseDirection() {
+        direction = switch (direction) {
+            case UP -> Direction.DOWN;
+            case DOWN -> Direction.UP;
+            case LEFT -> Direction.RIGHT;
+            case RIGHT -> Direction.LEFT;
+        };
+        drawDirection = direction;
     }
 
 

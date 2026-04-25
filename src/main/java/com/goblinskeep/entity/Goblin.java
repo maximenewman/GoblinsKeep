@@ -3,6 +3,7 @@ package com.goblinskeep.entity;
 import java.awt.*;
 import com.goblinskeep.app.Direction;
 import com.goblinskeep.app.GamePanel;
+import com.goblinskeep.pathFinder.Circle;
 
 /**
  * Represents a goblin enemy in the game.
@@ -21,6 +22,12 @@ public abstract class Goblin extends Entity{
 
     /** Indicates whether the goblin currently has line of sight to the player. */
     public boolean inSight;
+
+    /** Line-of-sight radius in world pixels. The goblin starts chasing when the player's center enters this circle. */
+    public int LOSradius = 120;
+
+    /** Manhattan tile distance beyond which a chasing goblin gives up if it has lost line of sight. */
+    private static final int DISENGAGE_TILE_DISTANCE = 10;
 
     /**
      * Constructs a goblin with references to the game panel and player.
@@ -66,14 +73,39 @@ public abstract class Goblin extends Entity{
     }
     
     /**
-     * Updates the goblin's state, including its pathfinding and visibility status.
-     * Calls the `getAction` method to define specific behavior.
+     * Updates the goblin's state. Recomputes line-of-sight, latches the chase state on
+     * when the player enters LOS, latches it off only when LOS is lost AND the player is
+     * more than {@link #DISENGAGE_TILE_DISTANCE} tiles away (so the goblin keeps pursuing
+     * briefly after a corner). Then delegates to the subclass's {@link #getAction()}.
      */
     public void update(){
-        onPath = true;
-        inSight = true;
+        int xDistance = Math.abs(WorldX - gp.Player.WorldX);
+        int yDistance = Math.abs(WorldY - gp.Player.WorldY);
+        int tileDistance = (xDistance + yDistance) / gp.tileSize;
+
+        checkLOS();
+
+        if (!onPath && inSight) {
+            onPath = true;
+        }
+        if (onPath && !inSight && tileDistance > DISENGAGE_TILE_DISTANCE) {
+            onPath = false;
+        }
 
         getAction();
+    }
+
+    /**
+     * Sets {@link #inSight} based on whether the player's center lies inside this goblin's
+     * LOS circle. Operates in world coordinates so the camera transform is irrelevant.
+     */
+    public void checkLOS() {
+        int playerCenterX = gp.Player.WorldX + gp.Player.hitboxDefaultX + (gp.Player.collisionArea.width / 2);
+        int playerCenterY = gp.Player.WorldY + gp.Player.hitboxDefaultY + (gp.Player.collisionArea.height / 2);
+        int goblinCenterX = WorldX + hitboxDefaultX + (collisionArea.width / 2);
+        int goblinCenterY = WorldY + hitboxDefaultY + (collisionArea.height / 2);
+        Circle losRange = new Circle(LOSradius, goblinCenterX, goblinCenterY);
+        inSight = losRange.intersects(playerCenterX, playerCenterY);
     }
 
     /**
