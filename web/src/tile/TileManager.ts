@@ -1,20 +1,5 @@
+import { loadImage } from "../render/loadImage.ts";
 import { Tile } from "./Tile.ts";
-
-/**
- * Loads an image from a public/ path. Browsers' {@code Image()} is async, so
- * tile loading returns a Promise the caller awaits before drawing.
- *
- * Local helper for now — will be promoted to a shared module once Entity
- * needs it for sprite loading.
- */
-function loadImage(path: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`Failed to load image: ${path}`));
-    img.src = path;
-  });
-}
 
 /**
  * Stores tile sprites and the world's tileNum grid. Mirrors TileManager.java
