@@ -10,7 +10,7 @@ import { PathFinder, type Grid } from "./pathfinder/PathFinder.ts";
 import { Camera } from "./render/Camera.ts";
 import { drawObjects } from "./render/drawObjects.ts";
 import { drawTileMap } from "./render/drawTileMap.ts";
-import { drawEndScreen, drawHUD } from "./render/drawOverlay.ts";
+import { drawEndScreen, drawHUD, drawPauseScreen } from "./render/drawOverlay.ts";
 import { TileManager } from "./tile/TileManager.ts";
 
 const WORLD_COL = 60;
@@ -136,9 +136,20 @@ const unlockAudio = (): void => {
 window.addEventListener("keydown", unlockAudio);
 window.addEventListener("pointerdown", unlockAudio);
 
+let paused = false;
+/** Latches once the end screen pauses music, so we don't restart pause every frame. */
+let endMusicHandled = false;
+
 window.addEventListener("keydown", (event) => {
   if (event.code === "KeyM") {
     sound.toggle();
+    return;
+  }
+  if (event.code === "KeyP" || event.code === "Escape") {
+    if (mapHandler.gameEnded()) return;
+    paused = !paused;
+    if (paused) sound.pause();
+    else sound.resume();
   }
 });
 
@@ -151,7 +162,7 @@ const tick = (now: number): void => {
   accumulator += dt;
 
   while (accumulator >= TICK_MS) {
-    if (!mapHandler.gameEnded()) {
+    if (!paused && !mapHandler.gameEnded()) {
       player.update(collisionChecker);
       mapHandler.updateTimer();
       for (const goblin of goblins) {
@@ -161,6 +172,11 @@ const tick = (now: number): void => {
     camera.targetWorldX = player.WorldX;
     camera.targetWorldY = player.WorldY;
     accumulator -= TICK_MS;
+  }
+
+  if (mapHandler.gameEnded() && !endMusicHandled) {
+    sound.pause();
+    endMusicHandled = true;
   }
 
   ctx.fillStyle = "black";
@@ -177,6 +193,8 @@ const tick = (now: number): void => {
   });
   if (mapHandler.gameEnded()) {
     drawEndScreen(ctx, mapHandler.isGameWin(), SCREEN_WIDTH, SCREEN_HEIGHT);
+  } else if (paused) {
+    drawPauseScreen(ctx, SCREEN_WIDTH, SCREEN_HEIGHT);
   }
 
   requestAnimationFrame(tick);

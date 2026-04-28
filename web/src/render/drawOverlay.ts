@@ -31,6 +31,31 @@ export function drawHUD(
   ctx.restore();
 }
 
+/** Dims the playfield and centers a "PAUSED" banner. */
+export function drawPauseScreen(
+  ctx: CanvasRenderingContext2D,
+  screenWidth: number,
+  screenHeight: number,
+): void {
+  ctx.save();
+  ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+  ctx.fillRect(0, 0, screenWidth, screenHeight);
+
+  ctx.font = END_FONT;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.lineWidth = 8;
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "black";
+  ctx.fillStyle = "white";
+
+  const cx = screenWidth / 2;
+  const cy = screenHeight / 2;
+  ctx.strokeText("PAUSED", cx, cy);
+  ctx.fillText("PAUSED", cx, cy);
+  ctx.restore();
+}
+
 /** Dims the playfield and centers a large win/loss banner. */
 export function drawEndScreen(
   ctx: CanvasRenderingContext2D,
