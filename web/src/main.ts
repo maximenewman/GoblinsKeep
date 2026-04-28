@@ -87,11 +87,14 @@ const camera = new Camera(
   TILE_SIZE,
 );
 
-const mapHandler = new MapHandler(objectM);
+let mapHandler = new MapHandler(objectM);
 mapHandler.seedBonusStates();
 const collisionChecker = new CollisionChecker(tileM, objectM, TILE_SIZE);
-collisionChecker.onPlayerObjectCollision = (obj) => mapHandler.handleObject(obj);
-collisionChecker.onPlayerEnemyCollision = () => mapHandler.playerCollisionWithEnemy();
+const wireCollisionCallbacks = (): void => {
+  collisionChecker.onPlayerObjectCollision = (obj) => mapHandler.handleObject(obj);
+  collisionChecker.onPlayerEnemyCollision = () => mapHandler.playerCollisionWithEnemy();
+};
+wireCollisionCallbacks();
 
 // Pathfinder reads from the world tile grid via a thin Grid adapter so it
 // doesn't depend on TileManager directly. Unloaded tiles are treated as solid
@@ -109,17 +112,20 @@ const grid: Grid = {
 };
 const pathFinder = new PathFinder(grid);
 
-const goblins: RegularGoblin[] = spawnState.goblins.map(({ col, row }) =>
-  new RegularGoblin(
-    player,
-    col * TILE_SIZE,
-    row * TILE_SIZE,
-    TILE_SIZE,
-    pathFinder,
-    collisionChecker,
-    () => mapHandler.playerCollisionWithEnemy(),
-  ),
-);
+const spawnGoblins = (): RegularGoblin[] =>
+  spawnState.goblins.map(({ col, row }) =>
+    new RegularGoblin(
+      player,
+      col * TILE_SIZE,
+      row * TILE_SIZE,
+      TILE_SIZE,
+      pathFinder,
+      collisionChecker,
+      () => mapHandler.playerCollisionWithEnemy(),
+    ),
+  );
+
+let goblins: RegularGoblin[] = spawnGoblins();
 await Promise.all(goblins.map((g) => g.loadSprites()));
 
 // Kick off the menu loop. AudioContext starts suspended on most browsers, so
@@ -139,10 +145,46 @@ window.addEventListener("pointerdown", unlockAudio);
 let paused = false;
 /** Latches once the end screen pauses music, so we don't restart pause every frame. */
 let endMusicHandled = false;
+/** Guards against R being held / pressed twice while the async restart is mid-flight. */
+let restarting = false;
+
+const restart = async (): Promise<void> => {
+  if (restarting) return;
+  restarting = true;
+
+  objectM.clear();
+  spawnState.player = null;
+  spawnState.goblins = [];
+  mapGen.loadMap(mapText);
+
+  const start = spawnState.player ?? { col: 0, row: 0 };
+  player.WorldX = start.col * TILE_SIZE;
+  player.WorldY = start.row * TILE_SIZE;
+  camera.targetWorldX = player.WorldX;
+  camera.targetWorldY = player.WorldY;
+
+  mapHandler = new MapHandler(objectM);
+  mapHandler.seedBonusStates();
+  wireCollisionCallbacks();
+
+  goblins = spawnGoblins();
+  await Promise.all(goblins.map((g) => g.loadSprites()));
+
+  paused = false;
+  endMusicHandled = false;
+  sound.setFile(Sound.MAIN_MENU);
+  sound.loop();
+
+  restarting = false;
+};
 
 window.addEventListener("keydown", (event) => {
   if (event.code === "KeyM") {
     sound.toggle();
+    return;
+  }
+  if (event.code === "KeyR" && mapHandler.gameEnded()) {
+    void restart();
     return;
   }
   if (event.code === "KeyP" || event.code === "Escape") {

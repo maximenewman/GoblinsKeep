@@ -135,6 +135,11 @@ export class ObjectManager {
     newObject.worldY = row * this.tileSize;
   }
 
+  /** Empties every spawned object. Used by restart to rebuild the world from the map file. */
+  clear(): void {
+    this.anObject.clear();
+  }
+
   /** Removes an object by its current world (pixel) coordinates — matches the Java signature. */
   removeObject(worldX: number, worldY: number): void {
     const key = this.generateKey(

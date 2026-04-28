@@ -9,6 +9,7 @@
 // enough that the pixel-art typography is fine there.
 const HUD_FONT = "bold 20px ui-monospace, 'Courier New', monospace";
 const END_FONT = "60px 'SuperPixel', 'PixelPurl', monospace";
+const PROMPT_FONT = "24px 'SuperPixel', 'PixelPurl', monospace";
 
 /** Draws a thin status row showing collected keys and current score. */
 export function drawHUD(
@@ -80,5 +81,12 @@ export function drawEndScreen(
   const cy = screenHeight / 2;
   ctx.strokeText(message, cx, cy);
   ctx.fillText(message, cx, cy);
+
+  ctx.font = PROMPT_FONT;
+  ctx.lineWidth = 4;
+  ctx.fillStyle = "white";
+  const prompt = "Press R to restart";
+  ctx.strokeText(prompt, cx, cy + 60);
+  ctx.fillText(prompt, cx, cy + 60);
   ctx.restore();
 }
