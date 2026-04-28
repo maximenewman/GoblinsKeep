@@ -134,6 +134,20 @@ export class MapHandler {
   }
 
   /**
+   * Seeds the cached alive flag on every spawned Bonus from the current
+   * game time. Without this, bonuses whose startTime is 0 would still draw
+   * as invisible until the first {@link updateTimer} tick after a full
+   * ONE_MIN window — visually wrong from the moment the world is set up.
+   */
+  seedBonusStates(): void {
+    for (const obj of this.objects.anObject.values()) {
+      if (obj instanceof Bonus) {
+        obj.updateState(this.currentTime);
+      }
+    }
+  }
+
+  /**
    * Drives the bonus alive-window clock and the trap-deduction cooldown.
    * Should be called once per game tick.
    */
