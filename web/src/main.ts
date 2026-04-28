@@ -1,5 +1,6 @@
 import { MapGenerator, type MapBuilder } from "./app/MapGenerator.ts";
 import { MapHandler } from "./app/MapHandler.ts";
+import { Sound } from "./audio/Sound.ts";
 import { CollisionChecker } from "./entity/CollisionChecker.ts";
 import { Player } from "./entity/Player.ts";
 import { RegularGoblin } from "./entity/RegularGoblin.ts";
@@ -53,7 +54,14 @@ const builder: MapBuilder = {
   },
 };
 
-await Promise.all([tileM.loadTiles(), objectM.loadSprites(), document.fonts.ready]);
+const sound = new Sound();
+
+await Promise.all([
+  tileM.loadTiles(),
+  objectM.loadSprites(),
+  sound.loadAll(),
+  document.fonts.ready,
+]);
 
 const mapText = await fetch("/maps/world1.txt").then((r) => r.text());
 const mapGen = new MapGenerator(tileM, builder);
@@ -113,6 +121,26 @@ const goblins: RegularGoblin[] = spawnState.goblins.map(({ col, row }) =>
   ),
 );
 await Promise.all(goblins.map((g) => g.loadSprites()));
+
+// Kick off the menu loop. AudioContext starts suspended on most browsers, so
+// the first user gesture (any keydown / pointerdown) calls sound.unlock() to
+// resume it — the queued source becomes audible at that point.
+sound.setFile(Sound.MAIN_MENU);
+sound.loop();
+
+const unlockAudio = (): void => {
+  void sound.unlock();
+  window.removeEventListener("keydown", unlockAudio);
+  window.removeEventListener("pointerdown", unlockAudio);
+};
+window.addEventListener("keydown", unlockAudio);
+window.addEventListener("pointerdown", unlockAudio);
+
+window.addEventListener("keydown", (event) => {
+  if (event.code === "KeyM") {
+    sound.toggle();
+  }
+});
 
 let lastTime = performance.now();
 let accumulator = 0;
