@@ -7,6 +7,7 @@ import { ObjectManager } from "./objects/ObjectManager.ts";
 import { Camera } from "./render/Camera.ts";
 import { drawObjects } from "./render/drawObjects.ts";
 import { drawTileMap } from "./render/drawTileMap.ts";
+import { drawEndScreen, drawHUD } from "./render/drawOverlay.ts";
 import { TileManager } from "./tile/TileManager.ts";
 
 const WORLD_COL = 60;
@@ -50,7 +51,7 @@ const builder: MapBuilder = {
   },
 };
 
-await Promise.all([tileM.loadTiles(), objectM.loadSprites()]);
+await Promise.all([tileM.loadTiles(), objectM.loadSprites(), document.fonts.ready]);
 
 const mapText = await fetch("/maps/world1.txt").then((r) => r.text());
 const mapGen = new MapGenerator(tileM, builder);
@@ -114,6 +115,13 @@ const tick = (now: number): void => {
   drawObjects(ctx, objectM, camera);
   player.draw(ctx);
   drawGoblinMarkers();
+  drawHUD(ctx, {
+    keysCollected: mapHandler.getKeysCollected(),
+    score: mapHandler.getScore(),
+  });
+  if (mapHandler.gameEnded()) {
+    drawEndScreen(ctx, mapHandler.isGameWin(), SCREEN_WIDTH, SCREEN_HEIGHT);
+  }
 
   requestAnimationFrame(tick);
 };
