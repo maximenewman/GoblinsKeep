@@ -1,43 +1,495 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Goblin's Keep</title>
-    <style>
-      @font-face {
-        font-family: "SuperPixel";
-        src: url("/font/SuperPixel-m2L8j.ttf") format("truetype");
-        font-display: block;
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Goblin's Keep</title>
+  <style>
+    @font-face {
+      font-family: "SuperPixel";
+      src: url("font/SuperPixel-m2L8j.ttf") format("truetype");
+      font-display: block;
+    }
+    @font-face {
+      font-family: "PixelPurl";
+      src: url("font/pixelpurl.ttf") format("truetype");
+      font-display: block;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #04040a;
+    }
+
+    /* ── Maze background ── */
+    #maze-bg {
+      position: fixed;
+      inset: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      opacity: 0.55;
+    }
+
+    /* ── Centering shell ── */
+    .stage {
+      position: relative;
+      z-index: 1;
+      width: 100vw; height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── Outer wrapper that scales with viewport ── */
+    .game-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      /* scale the whole frame to fit viewport */
+      --base-w: 1260px; /* 768 + 36px side borders */
+      --base-h: 795px; /* 432 + header + footer + borders */
+      width: var(--base-w);
+      height: var(--base-h);
+      transform-origin: center center;
+    }
+
+    /* ── Stone header bar ── */
+    .frame-header {
+      width: 100%;
+      background: linear-gradient(180deg, #2a2420 0%, #1a1510 100%);
+      border: 3px solid #4a3e34;
+      border-bottom: none;
+      padding: 10px 20px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      clip-path: polygon(
+        0 6px, 6px 0,
+        calc(100% - 6px) 0, 100% 6px,
+        100% 100%, 0 100%
+      );
+    }
+
+    .frame-header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        90deg,
+        transparent 0px, transparent 47px,
+        rgba(255,200,100,0.04) 47px, rgba(255,200,100,0.04) 48px
+      ),
+      repeating-linear-gradient(
+        0deg,
+        transparent 0px, transparent 23px,
+        rgba(255,200,100,0.04) 23px, rgba(255,200,100,0.04) 24px
+      );
+      pointer-events: none;
+    }
+
+    .frame-title {
+      font-family: "SuperPixel", monospace;
+      font-size: 22px;
+      color: #e8a040;
+      letter-spacing: 3px;
+      text-shadow:
+        0 0 8px rgba(232,120,20,0.8),
+        0 0 20px rgba(232,120,20,0.4),
+        2px 2px 0 #1a0800;
+      position: relative;
+      z-index: 1;
+    }
+
+    .torch {
+      width: 20px; height: 32px;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .torch-body {
+      position: absolute;
+      bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 6px; height: 18px;
+      background: #3a2a18;
+      border-radius: 1px;
+    }
+
+    .torch-flame {
+      position: absolute;
+      bottom: 16px; left: 50%; transform: translateX(-50%);
+      width: 10px; height: 16px;
+      border-radius: 50% 50% 30% 30%;
+      background: radial-gradient(ellipse at 50% 80%, #fff5a0 0%, #ff8c00 40%, #ff2200 75%, transparent 100%);
+      animation: flicker 0.12s steps(1) infinite;
+      box-shadow: 0 0 6px 2px rgba(255,140,0,0.7), 0 0 14px 4px rgba(255,60,0,0.4);
+    }
+
+    @keyframes flicker {
+      0%   { transform: translateX(-50%) scaleX(1)   scaleY(1);   opacity:1;    }
+      15%  { transform: translateX(-52%) scaleX(0.9) scaleY(1.05); opacity:0.95; }
+      30%  { transform: translateX(-48%) scaleX(1.1) scaleY(0.95); opacity:1;    }
+      50%  { transform: translateX(-50%) scaleX(0.95) scaleY(1.08); opacity:0.9; }
+      65%  { transform: translateX(-51%) scaleX(1.05) scaleY(0.98); opacity:1;   }
+      80%  { transform: translateX(-49%) scaleX(0.92) scaleY(1.04); opacity:0.95;}
+      100% { transform: translateX(-50%) scaleX(1)   scaleY(1);   opacity:1;    }
+    }
+
+    /* ── Side + game border ── */
+    .frame-body {
+      width: 100%;
+      display: flex;
+      flex: 1;
+    }
+
+    .frame-side {
+      width: 36px;
+      background: linear-gradient(90deg, #1a1510 0%, #241e18 50%, #1a1510 100%);
+      border-left: 3px solid #4a3e34;
+      border-right: 3px solid #4a3e34;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .frame-side::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent 0px, transparent 23px,
+        rgba(255,200,100,0.05) 23px, rgba(255,200,100,0.05) 24px
+      );
+    }
+
+    /* vertical rune marks on sides */
+    .frame-side .rune {
+      position: absolute;
+      left: 50%; transform: translateX(-50%);
+      width: 4px; height: 4px;
+      background: rgba(232,120,40,0.5);
+      box-shadow: 0 0 4px rgba(232,120,40,0.6);
+    }
+
+    .frame-canvas-wrap {
+      flex: 1;
+      border-left: 3px solid #4a3e34;
+      border-right: 3px solid #4a3e34;
+      position: relative;
+      background: #000;
+      overflow: hidden;
+    }
+
+    /* amber inner glow on canvas border */
+    .frame-canvas-wrap::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      box-shadow: inset 0 0 24px rgba(200,100,20,0.25), inset 0 0 4px rgba(200,100,20,0.4);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    #game {
+      display: block;
+      width: 100%; height: 100%;
+      image-rendering: pixelated;
+    }
+
+    /* ── Footer bar ── */
+    .frame-footer {
+      width: 100%;
+      background: linear-gradient(0deg, #2a2420 0%, #1a1510 100%);
+      border: 3px solid #4a3e34;
+      border-top: none;
+      padding: 6px 20px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      clip-path: polygon(
+        0 0, 100% 0,
+        100% calc(100% - 6px), calc(100% - 6px) 100%,
+        6px 100%, 0 calc(100% - 6px)
+      );
+    }
+
+    .hint {
+      font-family: "PixelPurl", monospace;
+      font-size: 11px;
+      color: rgba(200,160,80,0.55);
+      letter-spacing: 1.5px;
+    }
+
+    /* corner jewel */
+    .corner-gem {
+      width: 10px; height: 10px;
+      background: radial-gradient(circle at 35% 35%, #ffe080, #c87020 60%, #6a3000);
+      border-radius: 2px;
+      box-shadow: 0 0 5px rgba(232,150,30,0.7);
+    }
+
+    /* ── outer frame glow ── */
+    .frame-glow {
+      position: absolute;
+      inset: -2px;
+      pointer-events: none;
+      border-radius: 2px;
+      box-shadow:
+        0 0 20px rgba(180,80,10,0.35),
+        0 0 60px rgba(180,80,10,0.15),
+        0 0 120px rgba(180,80,10,0.08);
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Maze background -->
+  <canvas id="maze-bg"></canvas>
+
+  <div class="stage">
+    <div class="game-wrapper" id="gameWrapper">
+      <div class="frame-glow"></div>
+
+      <!-- Header -->
+      <div class="frame-header">
+        <div class="torch"><div class="torch-body"></div><div class="torch-flame"></div></div>
+        <span class="frame-title">GOBLIN'S KEEP</span>
+        <div class="torch"><div class="torch-body"></div><div class="torch-flame"></div></div>
+      </div>
+
+      <!-- Body: sides + canvas -->
+      <div class="frame-body">
+        <div class="frame-side" id="sideLeft"></div>
+        <div class="frame-canvas-wrap">
+          <!-- 
+            ════════════════════════════════════════
+            DROP-IN POINT: replace this canvas tag
+            (and the script below) with your real
+            game canvas + module script when embedding
+            into your Vite index.html.
+            ════════════════════════════════════════
+          -->
+          <canvas id="game" width="768" height="432"></canvas>
+          <script type="module" src="/src/main.ts"></script>
+        </div>
+        <div class="frame-side" id="sideRight"></div>
+      </div>
+
+      <!-- Footer -->
+      <div class="frame-footer">
+        <div class="corner-gem"></div>
+        <span class="hint">WASD · ARROW KEYS · M MUTE</span>
+        <div class="corner-gem"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ── Scale the whole frame to fit the viewport ──────────────────────────
+    const wrapper = document.getElementById('gameWrapper');
+    function scaleFrame() {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const baseW = 840;
+      const baseH = 530;
+      const scale = Math.min(vw / baseW, vh / baseH, 1);
+      wrapper.style.transform = `scale(${scale})`;
+    }
+    scaleFrame();
+    window.addEventListener('resize', scaleFrame);
+
+    // ── Seed side rune dots ────────────────────────────────────────────────
+    ['sideLeft','sideRight'].forEach(id => {
+      const el = document.getElementById(id);
+      for (let y = 40; y < 432; y += 56) {
+        const dot = document.createElement('div');
+        dot.className = 'rune';
+        dot.style.top = y + 'px';
+        el.appendChild(dot);
       }
-      @font-face {
-        font-family: "PixelPurl";
-        src: url("/font/pixelpurl.ttf") format("truetype");
-        font-display: block;
+    });
+
+    // ── Placeholder: draw title screen on game canvas ──────────────────────
+    const gameCanvas = document.getElementById('game');
+    const gctx = gameCanvas.getContext('2d');
+    const img = new Image();
+    img.onload = () => gctx.drawImage(img, 0, 0, 768, 432);
+    img.src = 'UI_img/titleScreen.png';
+
+    // ── Animated Maze Background ───────────────────────────────────────────
+    const bg = document.getElementById('maze-bg');
+    const ctx = bg.getContext('2d');
+    const CELL = 28;
+    let cols, rows, cells, stack, current, generated;
+    let fadeAlpha = 0;
+    let phase = 'generate'; // 'generate' | 'hold' | 'fade'
+    let holdTimer = 0;
+
+    function resize() {
+      bg.width  = window.innerWidth;
+      bg.height = window.innerHeight;
+      init();
+    }
+
+    function init() {
+      cols = Math.ceil(bg.width  / CELL) + 1;
+      rows = Math.ceil(bg.height / CELL) + 1;
+      cells = new Uint8Array(cols * rows); // visited flags
+      // walls: each cell has right-wall (bit0) and bottom-wall (bit1)
+      // 0 = wall present (default), cleared when passage carved
+      // We store passage-open bits in a separate array for drawing
+      const total = cols * rows;
+      cells.fill(0);
+      // passages[i]: bit0=right open, bit1=down open
+      window._passages = new Uint8Array(total);
+      window._passages.fill(0);
+
+      stack = [];
+      generated = false;
+      fadeAlpha = 0;
+      phase = 'generate';
+
+      const startC = Math.floor(cols / 2);
+      const startR = Math.floor(rows / 2);
+      current = startR * cols + startC;
+      cells[current] = 1;
+      stack.push(current);
+    }
+
+    function idx(c, r) { return r * cols + c; }
+    function col(i)    { return i % cols; }
+    function row(i)    { return Math.floor(i / cols); }
+
+    function neighbors(i) {
+      const c = col(i), r = row(i);
+      const nb = [];
+      if (c > 0         && !cells[idx(c-1,r)]) nb.push({ni: idx(c-1,r), dir:'L'});
+      if (c < cols-1    && !cells[idx(c+1,r)]) nb.push({ni: idx(c+1,r), dir:'R'});
+      if (r > 0         && !cells[idx(c,r-1)]) nb.push({ni: idx(c,r-1), dir:'U'});
+      if (r < rows-1    && !cells[idx(c,r+1)]) nb.push({ni: idx(c,r+1), dir:'D'});
+      return nb;
+    }
+
+    // Carve N cells per frame (speed)
+    const SPEED = 18;
+
+    function stepMaze() {
+      for (let s = 0; s < SPEED; s++) {
+        if (!stack.length) { generated = true; return; }
+        const nb = neighbors(current);
+        if (nb.length) {
+          const { ni, dir } = nb[Math.floor(Math.random() * nb.length)];
+          cells[ni] = 1;
+          // open passage
+          const c = col(current), r = row(current);
+          if (dir === 'R') window._passages[current] |= 1;
+          if (dir === 'D') window._passages[current] |= 2;
+          if (dir === 'L') window._passages[ni] |= 1;
+          if (dir === 'U') window._passages[ni] |= 2;
+          stack.push(current);
+          current = ni;
+        } else {
+          current = stack.pop();
+        }
       }
-      html,
-      body {
-        margin: 0;
-        background: black;
-        height: 100%;
-        overflow: hidden;
+    }
+
+    function drawMaze(alpha) {
+      const W = bg.width, H = bg.height;
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = '#04040a';
+      ctx.fillRect(0, 0, W, H);
+
+      // passage corridors (fills)
+      for (let i = 0; i < cols * rows; i++) {
+        if (!cells[i]) continue;
+        const c = col(i), r = row(i);
+        const x = c * CELL, y = r * CELL;
+        // cell floor
+        ctx.fillStyle = `rgba(14,12,20,${alpha})`;
+        ctx.fillRect(x+1, y+1, CELL-1, CELL-1);
+        // right passage
+        if (window._passages[i] & 1) {
+          ctx.fillStyle = `rgba(14,12,20,${alpha})`;
+          ctx.fillRect(x+CELL-1, y+1, 3, CELL-1);
+        }
+        // down passage
+        if (window._passages[i] & 2) {
+          ctx.fillStyle = `rgba(14,12,20,${alpha})`;
+          ctx.fillRect(x+1, y+CELL-1, CELL-1, 3);
+        }
       }
-      body {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+
+      // wall lines
+      ctx.strokeStyle = `rgba(80,60,30,${alpha * 0.7})`;
+      ctx.lineWidth = 1;
+      for (let i = 0; i < cols * rows; i++) {
+        if (!cells[i]) continue;
+        const c = col(i), r = row(i);
+        const x = c * CELL, y = r * CELL;
+        // right wall
+        if (!(window._passages[i] & 1)) {
+          ctx.beginPath();
+          ctx.moveTo(x+CELL, y); ctx.lineTo(x+CELL, y+CELL);
+          ctx.stroke();
+        }
+        // bottom wall
+        if (!(window._passages[i] & 2)) {
+          ctx.beginPath();
+          ctx.moveTo(x, y+CELL); ctx.lineTo(x+CELL, y+CELL);
+          ctx.stroke();
+        }
       }
-      #game {
-        /* Scale the 768x432 internal resolution (16x9 tiles, Pokemon-style
-           zoom into the player) to fill the viewport while preserving 16:9. */
-        width: min(100vw, calc(100vh * 16 / 9));
-        height: min(100vh, calc(100vw * 9 / 16));
-        image-rendering: pixelated;
+
+      // frontier glow
+      if (!generated && stack.length) {
+        const fc = col(current), fr = row(current);
+        const grd = ctx.createRadialGradient(
+          fc*CELL+CELL/2, fr*CELL+CELL/2, 0,
+          fc*CELL+CELL/2, fr*CELL+CELL/2, CELL*3.5
+        );
+        grd.addColorStop(0, `rgba(230,100,20,${0.22 * alpha})`);
+        grd.addColorStop(1, `rgba(230,100,20,0)`);
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, W, H);
       }
-    </style>
-  </head>
-  <body>
-    <canvas id="game" width="768" height="432"></canvas>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+    }
+
+    let lastT = 0;
+    function loop(t) {
+      const dt = Math.min(t - lastT, 50);
+      lastT = t;
+
+      if (phase === 'generate') {
+        if (!generated) {
+          stepMaze();
+          fadeAlpha = Math.min(fadeAlpha + 0.015, 1);
+        } else {
+          holdTimer += dt;
+          if (holdTimer > 3000) phase = 'fade';
+        }
+        drawMaze(fadeAlpha);
+      } else if (phase === 'fade') {
+        fadeAlpha -= 0.008;
+        drawMaze(Math.max(fadeAlpha, 0));
+        if (fadeAlpha <= 0) {
+          holdTimer = 0;
+          init();
+        }
+      }
+
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+    requestAnimationFrame(loop);
+  </script>
+</body>
 </html>
