@@ -1,4 +1,5 @@
 import { MapGenerator, type MapBuilder } from "./app/MapGenerator.ts";
+import { CollisionChecker } from "./entity/CollisionChecker.ts";
 import { Player } from "./entity/Player.ts";
 import { PlayerInputHandler } from "./input/PlayerInputHandler.ts";
 import { ObjectManager } from "./objects/ObjectManager.ts";
@@ -74,6 +75,8 @@ const camera = new Camera(
   TILE_SIZE,
 );
 
+const collisionChecker = new CollisionChecker(tileM, objectM, TILE_SIZE);
+
 let lastTime = performance.now();
 let accumulator = 0;
 
@@ -92,7 +95,7 @@ const tick = (now: number): void => {
   accumulator += dt;
 
   while (accumulator >= TICK_MS) {
-    player.update();
+    player.update(collisionChecker);
     camera.targetWorldX = player.WorldX;
     camera.targetWorldY = player.WorldY;
     accumulator -= TICK_MS;

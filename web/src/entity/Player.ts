@@ -5,6 +5,16 @@ import { loadImage } from "../render/loadImage.ts";
 import { Entity } from "./Entity.ts";
 
 /**
+ * Structural type Player accepts for collision checking. Declared here rather
+ * than imported so Player doesn't take a hard dependency on the concrete
+ * CollisionChecker class — keeps the import graph acyclic and lets tests
+ * pass a stub.
+ */
+export interface PlayerCollisionChecker {
+  checkPlayerCollisions(player: Player): void;
+}
+
+/**
  * The player character. Mirrors Player.java — same hitbox / screen-center
  * layout. Always drawn at a fixed screen position because the player is the
  * camera target.
@@ -64,9 +74,10 @@ export class Player extends Entity {
     this.right2 = right2;
   }
 
-  update(): void {
+  update(checker?: PlayerCollisionChecker): void {
     this.collisionOn = false;
     this.updateDirection();
+    checker?.checkPlayerCollisions(this);
     this.moveEntityTowardDirection();
   }
 
