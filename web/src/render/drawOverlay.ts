@@ -4,7 +4,10 @@
  * exist purely for player feedback and share the font setup.
  */
 
-const HUD_FONT = "20px 'SuperPixel', 'PixelPurl', monospace";
+// HUD uses a system monospace so digit glyphs are guaranteed regardless of
+// which pixel font happens to be loaded. The end-screen banner is large
+// enough that the pixel-art typography is fine there.
+const HUD_FONT = "bold 20px ui-monospace, 'Courier New', monospace";
 const END_FONT = "60px 'SuperPixel', 'PixelPurl', monospace";
 
 /** Draws a thin status row showing collected keys and current score. */
@@ -16,17 +19,15 @@ export function drawHUD(
   ctx.font = HUD_FONT;
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
-  ctx.lineWidth = 4;
-  ctx.lineJoin = "round";
-  ctx.strokeStyle = "black";
-  ctx.fillStyle = "white";
 
-  const lines = [`Keys ${state.keysCollected}`, `Score ${state.score}`];
-  for (let i = 0; i < lines.length; i++) {
-    const y = 12 + i * 26;
-    ctx.strokeText(lines[i]!, 12, y);
-    ctx.fillText(lines[i]!, 12, y);
-  }
+  // Background pill — avoids per-glyph stroke artifacts that hide thin digits
+  // in pixel fonts and gives consistent contrast against any tile.
+  ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
+  ctx.fillRect(8, 8, 160, 56);
+
+  ctx.fillStyle = "white";
+  ctx.fillText(`Keys ${state.keysCollected}`, 16, 14);
+  ctx.fillText(`Score ${state.score}`, 16, 40);
   ctx.restore();
 }
 
