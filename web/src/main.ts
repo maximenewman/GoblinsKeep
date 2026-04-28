@@ -2,8 +2,10 @@ import { MapGenerator, type MapBuilder } from "./app/MapGenerator.ts";
 import { MapHandler } from "./app/MapHandler.ts";
 import { CollisionChecker } from "./entity/CollisionChecker.ts";
 import { Player } from "./entity/Player.ts";
+import { RegularGoblin } from "./entity/RegularGoblin.ts";
 import { PlayerInputHandler } from "./input/PlayerInputHandler.ts";
 import { ObjectManager } from "./objects/ObjectManager.ts";
+import { PathFinder, type Grid } from "./pathfinder/PathFinder.ts";
 import { Camera } from "./render/Camera.ts";
 import { drawObjects } from "./render/drawObjects.ts";
 import { drawTileMap } from "./render/drawTileMap.ts";
@@ -81,18 +83,39 @@ const mapHandler = new MapHandler(objectM);
 mapHandler.seedBonusStates();
 const collisionChecker = new CollisionChecker(tileM, objectM, TILE_SIZE);
 collisionChecker.onPlayerObjectCollision = (obj) => mapHandler.handleObject(obj);
+collisionChecker.onPlayerEnemyCollision = () => mapHandler.playerCollisionWithEnemy();
+
+// Pathfinder reads from the world tile grid via a thin Grid adapter so it
+// doesn't depend on TileManager directly. Unloaded tiles are treated as solid
+// so a malformed map can't make the search NPE.
+const grid: Grid = {
+  maxCol: tileM.mapTileNum.length,
+  maxRow: tileM.mapTileNum[0]?.length ?? 0,
+  isSolid: (col, row) => {
+    const tileNum = tileM.mapTileNum[col]?.[row];
+    if (tileNum === undefined) return true;
+    const tile = tileM.tiles[tileNum];
+    if (!tile) return true;
+    return tile.collision;
+  },
+};
+const pathFinder = new PathFinder(grid);
+
+const goblins: RegularGoblin[] = spawnState.goblins.map(({ col, row }) =>
+  new RegularGoblin(
+    player,
+    col * TILE_SIZE,
+    row * TILE_SIZE,
+    TILE_SIZE,
+    pathFinder,
+    collisionChecker,
+    () => mapHandler.playerCollisionWithEnemy(),
+  ),
+);
+await Promise.all(goblins.map((g) => g.loadSprites()));
 
 let lastTime = performance.now();
 let accumulator = 0;
-
-const drawGoblinMarkers = (): void => {
-  ctx.fillStyle = "#ef4444";
-  for (const g of spawnState.goblins) {
-    const x = camera.toScreenX(g.col * TILE_SIZE);
-    const y = camera.toScreenY(g.row * TILE_SIZE);
-    ctx.fillRect(x + 8, y + 8, TILE_SIZE - 16, TILE_SIZE - 16);
-  }
-};
 
 const tick = (now: number): void => {
   const dt = Math.min(now - lastTime, MAX_DT_MS);
@@ -103,6 +126,9 @@ const tick = (now: number): void => {
     if (!mapHandler.gameEnded()) {
       player.update(collisionChecker);
       mapHandler.updateTimer();
+      for (const goblin of goblins) {
+        goblin.update();
+      }
     }
     camera.targetWorldX = player.WorldX;
     camera.targetWorldY = player.WorldY;
@@ -114,7 +140,9 @@ const tick = (now: number): void => {
   drawTileMap(ctx, tileM, camera);
   drawObjects(ctx, objectM, camera);
   player.draw(ctx);
-  drawGoblinMarkers();
+  for (const goblin of goblins) {
+    goblin.draw(ctx, camera);
+  }
   drawHUD(ctx, {
     keysCollected: mapHandler.getKeysCollected(),
     score: mapHandler.getScore(),
