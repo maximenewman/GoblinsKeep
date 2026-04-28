@@ -30,6 +30,9 @@ export class CollisionChecker {
   /** Fires once per tick with whichever object the player overlaps last (any of them). */
   onPlayerObjectCollision: ((object: MainObject) => void) | null = null;
 
+  /** Fires when an enemy's predicted move would land on the player. */
+  onPlayerEnemyCollision: (() => void) | null = null;
+
   constructor(tileM: TileManager, objectM: ObjectManager, tileSize: number) {
     this.tileM = tileM;
     this.objectM = objectM;
@@ -47,6 +50,31 @@ export class CollisionChecker {
     const touched = this.checkObjectCollision(player, true);
     if (touched) {
       this.onPlayerObjectCollision?.(touched);
+    }
+  }
+
+  /**
+   * Per-tick collision checks for an enemy. Tile collisions block the move
+   * the same way they do for the player. If the enemy's predicted next box
+   * overlaps the player, blocks the enemy and fires the
+   * onPlayerEnemyCollision callback (MapHandler will route it to
+   * playerCollisionWithEnemy).
+   *
+   * Goblin-vs-goblin separation isn't ported yet — overlapping goblins are
+   * a minor visual issue, no stuck states.
+   */
+  handleEnemyCollisions(enemy: Entity, player: Player): void {
+    this.checkTileCollision(enemy);
+    const enemyNext = this.predictedEntityArea(enemy);
+    const playerArea = new CollisionArea(
+      player.WorldX + player.hitboxDefaultX,
+      player.WorldY + player.hitboxDefaultY,
+      player.collisionArea.width,
+      player.collisionArea.height,
+    );
+    if (enemyNext.intersects(playerArea)) {
+      enemy.collisionOn = true;
+      this.onPlayerEnemyCollision?.();
     }
   }
 
