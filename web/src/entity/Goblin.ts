@@ -22,13 +22,13 @@ export abstract class Goblin extends Entity {
   /** True iff the player's center sits inside this goblin's LOS circle. */
   inSight = false;
   /** Line-of-sight radius in world pixels. */
-  LOSradius = 120;
+  LOSradius = 130;
 
   protected readonly player: Player;
   protected readonly tileSize: number;
 
   /** Manhattan tile distance beyond which a chasing goblin gives up if it has lost line of sight. */
-  private static readonly DISENGAGE_TILE_DISTANCE = 15;
+  private static readonly DISENGAGE_TILE_DISTANCE = 8;
 
   constructor(player: Player, worldX: number, worldY: number, tileSize: number) {
     super(worldX, worldY);
