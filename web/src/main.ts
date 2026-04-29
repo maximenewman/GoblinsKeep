@@ -1,6 +1,6 @@
 import { GameStatus } from "./app/GameStatus.ts";
 import { MapGenerator, type MapBuilder } from "./app/MapGenerator.ts";
-import { MapHandler } from "./app/MapHandler.ts";
+import { MapHandler, type MessageHandler } from "./app/MapHandler.ts";
 import { Sound } from "./audio/Sound.ts";
 import { CollisionChecker } from "./entity/CollisionChecker.ts";
 import { Player } from "./entity/Player.ts";
@@ -16,6 +16,7 @@ import {
   drawHUD,
   drawInstructionsScreen,
   drawMenuScreen,
+  drawMessage,
   drawPauseScreen,
 } from "./render/drawOverlay.ts";
 import { loadImage } from "./render/loadImage.ts";
@@ -100,7 +101,21 @@ const camera = new Camera(
   TILE_SIZE,
 );
 
-let mapHandler = new MapHandler(objectM);
+// Brief status text ("Lever Unlocked", "Door Locked!", etc) shown above the
+// player. Java holds these on UI; here we keep them in main and wire MapHandler
+// to the implementation below.
+let activeMessage = "";
+let messageCounter = 0;
+const MESSAGE_DURATION_TICKS = 120; // 2 seconds at 60Hz, matches Java UI.drawPlaying
+
+const messageHandler: MessageHandler = {
+  showMessage(text: string): void {
+    activeMessage = text;
+    messageCounter = 0;
+  },
+};
+
+let mapHandler = new MapHandler(objectM, messageHandler);
 mapHandler.seedBonusStates();
 const collisionChecker = new CollisionChecker(tileM, objectM, TILE_SIZE);
 const wireCollisionCallbacks = (): void => {
@@ -220,9 +235,11 @@ const restart = async (): Promise<void> => {
   camera.targetWorldX = player.WorldX;
   camera.targetWorldY = player.WorldY;
 
-  mapHandler = new MapHandler(objectM);
+  mapHandler = new MapHandler(objectM, messageHandler);
   mapHandler.seedBonusStates();
   wireCollisionCallbacks();
+  activeMessage = "";
+  messageCounter = 0;
 
   goblins = spawnGoblins();
   await Promise.all(goblins.map((g) => g.loadSprites()));
@@ -298,6 +315,13 @@ const tick = (now: number): void => {
         goblin.update();
       }
       playTime += 1 / TICK_HZ;
+      if (activeMessage !== "") {
+        messageCounter++;
+        if (messageCounter > MESSAGE_DURATION_TICKS) {
+          activeMessage = "";
+          messageCounter = 0;
+        }
+      }
       if (mapHandler.gameEnded()) {
         setStatus(GameStatus.END);
         sound.pause();
@@ -340,6 +364,9 @@ const tick = (now: number): void => {
       score: mapHandler.getScore(),
       playTime,
     }, keyImage);
+    if (activeMessage !== "" && status === GameStatus.PLAYING) {
+      drawMessage(ctx, activeMessage, player.screenY - 10, SCREEN_WIDTH);
+    }
     if (status === GameStatus.PAUSED) {
       drawPauseScreen(ctx, PAUSE_OPTIONS, cursor, SCREEN_WIDTH, SCREEN_HEIGHT);
     }

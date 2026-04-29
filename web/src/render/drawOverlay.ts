@@ -10,6 +10,7 @@ const TITLE_FONT = "80px 'SuperPixel', 'PixelPurl', monospace";
 const BANNER_FONT = "60px 'SuperPixel', 'PixelPurl', monospace";
 const OPTION_FONT = "40px 'SuperPixel', 'PixelPurl', monospace";
 const BODY_FONT = "28px 'PixelPurl', monospace";
+const MESSAGE_FONT = "20px 'PixelPurl', monospace";
 
 /** Strokes a black border under the white fill — same look as Java's drawTextWithBorder. */
 function drawBorderedText(
@@ -52,6 +53,25 @@ export function drawHUD(
   const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
   const ss = String(seconds % 60).padStart(2, "0");
   drawBorderedText(ctx, `Time: ${mm}:${ss}`, TILE * 12, TILE, 3);
+  ctx.restore();
+}
+
+/**
+ * Brief centered status text (e.g. "Lever Unlocked", "Door Locked!") drawn
+ * above the player. Mirrors Java UI.drawPlaying's message block.
+ */
+export function drawMessage(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  y: number,
+  screenWidth: number,
+): void {
+  ctx.save();
+  ctx.font = MESSAGE_FONT;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "white";
+  drawBorderedText(ctx, text, screenWidth / 2, y, 2);
   ctx.restore();
 }
 
