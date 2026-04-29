@@ -18,8 +18,8 @@ import { TileManager } from "./tile/TileManager.ts";
 const WORLD_COL = 60;
 const WORLD_ROW = 66;
 const TILE_SIZE = 48;
-const SCREEN_WIDTH = 768;   // 16 tiles wide
-const SCREEN_HEIGHT = 432;  // 9 tiles tall — Pokemon-style zoom on the player
+const SCREEN_WIDTH = 768;   // 16 tiles wide  — matches Java GamePanel.maxScreenCol
+const SCREEN_HEIGHT = 576;  // 12 tiles tall — matches Java GamePanel.maxScreenRow (4:3)
 const PLAYER_SPEED = 5;
 const TICK_HZ = 60;
 const TICK_MS = 1000 / TICK_HZ;

@@ -51,7 +51,7 @@
       gap: 0;
       /* scale the whole frame to fit viewport */
       --base-w: 1260px; /* 768 + 36px side borders */
-      --base-h: 795px; /* 432 + header + footer + borders */
+      --base-h: 939px; /* 576 + header + footer + borders */
       width: var(--base-w);
       height: var(--base-h);
       transform-origin: center center;
@@ -266,7 +266,7 @@
       <div class="frame-body">
         <div class="frame-side" id="sideLeft"></div>
         <div class="frame-canvas-wrap">
-          <canvas id="game" width="768" height="432"></canvas>
+          <canvas id="game" width="768" height="576"></canvas>
           <script type="module" src="/src/main.ts"></script>
         </div>
         <div class="frame-side" id="sideRight"></div>
@@ -288,8 +288,10 @@
     function scaleFrame() {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-      const baseW = 840;
-      const baseH = 530;
+      // Must match the wrapper's --base-w / --base-h above so transform: scale()
+      // actually fits the rendered size into the viewport.
+      const baseW = 1260;
+      const baseH = 939;
       const scale = Math.min(vw / baseW, vh / baseH, 1);
       wrapper.style.transform = `scale(${scale})`;
     }
@@ -299,7 +301,7 @@
     // ── Seed side rune dots ────────────────────────────────────────────────
     ['sideLeft','sideRight'].forEach(id => {
       const el = document.getElementById(id);
-      for (let y = 40; y < 432; y += 56) {
+      for (let y = 40; y < 576; y += 56) {
         const dot = document.createElement('div');
         dot.className = 'rune';
         dot.style.top = y + 'px';
@@ -311,7 +313,7 @@
     const gameCanvas = document.getElementById('game');
     const gctx = gameCanvas.getContext('2d');
     const img = new Image();
-    img.onload = () => gctx.drawImage(img, 0, 0, 768, 432);
+    img.onload = () => gctx.drawImage(img, 0, 0, 768, 576);
     img.src = 'UI_img/titleScreen.png';
 
     // ── Animated Maze Background ───────────────────────────────────────────
