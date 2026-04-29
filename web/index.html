@@ -248,12 +248,55 @@
         0 0 120px rgba(180,80,10,0.08);
     }
 
+    /* ── Mobile gate ── */
+    .mobile-notice {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: #04040a;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+    .mobile-notice h1 {
+      font-family: "SuperPixel", monospace;
+      font-size: 28px;
+      letter-spacing: 2px;
+      color: #e8a040;
+      text-shadow: 2px 2px 0 #1a0800, 0 0 12px rgba(232,120,20,0.6);
+      line-height: 1.4;
+      margin-bottom: 18px;
+    }
+    .mobile-notice p {
+      font-family: "PixelPurl", monospace;
+      font-size: 16px;
+      color: rgba(200,160,80,0.9);
+      max-width: 320px;
+      line-height: 1.5;
+    }
+
+    /* Hide the game and show the notice on touch devices — Goblin's Keep is
+       keyboard-only, so a coarse pointer is the right cutoff (tablets too). */
+    @media (pointer: coarse) {
+      .stage, #maze-bg { display: none; }
+      .mobile-notice { display: flex; }
+    }
+
   </style>
 </head>
 <body>
 
   <!-- Maze background -->
   <canvas id="maze-bg"></canvas>
+
+  <!-- Mobile gate (shown via media query on touch devices) -->
+  <div class="mobile-notice">
+    <h1>MOBILE VERSION<br>COMING SOON</h1>
+    <p>Goblin's Keep is best played on a desktop with a keyboard. Please come back on a larger screen.</p>
+  </div>
 
   <div class="stage">
     <div class="game-wrapper" id="gameWrapper">
