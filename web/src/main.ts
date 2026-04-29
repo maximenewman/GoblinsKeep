@@ -12,6 +12,7 @@ import { Camera } from "./render/Camera.ts";
 import { drawObjects } from "./render/drawObjects.ts";
 import { drawTileMap } from "./render/drawTileMap.ts";
 import { drawEndScreen, drawHUD, drawMenuScreen, drawPauseScreen } from "./render/drawOverlay.ts";
+import { loadImage } from "./render/loadImage.ts";
 import { TileManager } from "./tile/TileManager.ts";
 
 const WORLD_COL = 60;
@@ -57,11 +58,15 @@ const builder: MapBuilder = {
 
 const sound = new Sound();
 
-await Promise.all([
+const [, , , , titleImage, winImage, loseEnemyImage, loseScoreImage] = await Promise.all([
   tileM.loadTiles(),
   objectM.loadSprites(),
   sound.loadAll(),
   document.fonts.ready,
+  loadImage("/UI_img/titleScreenText.png"),
+  loadImage("/UI_img/win.png"),
+  loadImage("/UI_img/end screen (bg).png"),
+  loadImage("/UI_img/lose.png"),
 ]);
 
 const mapText = await fetch("/maps/world1.txt").then((r) => r.text());
@@ -228,7 +233,7 @@ const tick = (now: number): void => {
   }
 
   if (status === GameStatus.MENU) {
-    drawMenuScreen(ctx, SCREEN_WIDTH, SCREEN_HEIGHT);
+    drawMenuScreen(ctx, titleImage, SCREEN_WIDTH, SCREEN_HEIGHT);
   } else {
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -243,7 +248,11 @@ const tick = (now: number): void => {
       score: mapHandler.getScore(),
     });
     if (status === GameStatus.END) {
-      drawEndScreen(ctx, mapHandler.isGameWin(), SCREEN_WIDTH, SCREEN_HEIGHT);
+      const win = mapHandler.isGameWin();
+      const endImage = win
+        ? winImage
+        : (mapHandler.getEndReason() === "SCORE" ? loseScoreImage : loseEnemyImage);
+      drawEndScreen(ctx, endImage, win, SCREEN_WIDTH, SCREEN_HEIGHT);
     } else if (status === GameStatus.PAUSED) {
       drawPauseScreen(ctx, SCREEN_WIDTH, SCREEN_HEIGHT);
     }

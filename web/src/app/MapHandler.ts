@@ -37,6 +37,8 @@ export class MapHandler {
   private _exitOpen = false;
   private _gameEnded = false;
   private _gameWin = false;
+  /** What ended the game on a loss — drives the end-screen art. Unused on a win. */
+  private _endReason: "ENEMY" | "SCORE" | null = null;
 
   private canDeductPoints = true;
   private trapCounter = 0;
@@ -98,6 +100,7 @@ export class MapHandler {
     if (this._score < 0) {
       this._gameEnded = true;
       this._gameWin = false;
+      this._endReason = "SCORE";
     }
   }
 
@@ -131,6 +134,7 @@ export class MapHandler {
   playerCollisionWithEnemy(): void {
     this._gameEnded = true;
     this._gameWin = false;
+    this._endReason = "ENEMY";
   }
 
   /**
@@ -176,6 +180,8 @@ export class MapHandler {
   isGameWin(): boolean { return this._gameWin; }
   getScore(): number { return this._score; }
   getKeysCollected(): number { return this._keysCollected; }
+  /** Cause of loss — "ENEMY" for goblin contact, "SCORE" for score < 0; null on a win. */
+  getEndReason(): "ENEMY" | "SCORE" | null { return this._endReason; }
 
   // ---- Test seams kept verbatim from MapHandler.java ----
   setGameEnded(value: boolean): void { this._gameEnded = value; }

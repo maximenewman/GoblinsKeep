@@ -32,35 +32,28 @@ export function drawHUD(
   ctx.restore();
 }
 
-/** Title screen with "GOBLIN'S KEEP" + "Press Enter to start" prompt. */
+/** Title screen using the provided art (text baked in) + "Press Enter to start" prompt. */
 export function drawMenuScreen(
   ctx: CanvasRenderingContext2D,
+  background: HTMLImageElement,
   screenWidth: number,
   screenHeight: number,
 ): void {
   ctx.save();
-  ctx.fillStyle = "black";
-  ctx.fillRect(0, 0, screenWidth, screenHeight);
+  ctx.drawImage(background, 0, 0, screenWidth, screenHeight);
 
+  ctx.font = PROMPT_FONT;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.lineJoin = "round";
-  ctx.strokeStyle = "black";
-
-  const cx = screenWidth / 2;
-  const cy = screenHeight / 2;
-
-  ctx.font = END_FONT;
-  ctx.lineWidth = 8;
-  ctx.fillStyle = "#fbbf24";
-  ctx.strokeText("GOBLIN'S KEEP", cx, cy - 20);
-  ctx.fillText("GOBLIN'S KEEP", cx, cy - 20);
-
-  ctx.font = PROMPT_FONT;
   ctx.lineWidth = 4;
+  ctx.strokeStyle = "black";
   ctx.fillStyle = "white";
-  ctx.strokeText("Press Enter to start", cx, cy + 50);
-  ctx.fillText("Press Enter to start", cx, cy + 50);
+  const prompt = "Press Enter to start";
+  const px = screenWidth / 2;
+  const py = screenHeight - 40;
+  ctx.strokeText(prompt, px, py);
+  ctx.fillText(prompt, px, py);
   ctx.restore();
 }
 
@@ -89,15 +82,21 @@ export function drawPauseScreen(
   ctx.restore();
 }
 
-/** Dims the playfield and centers a large win/loss banner. */
+/**
+ * End screen drawn over the win/lose art with a 35% black dim layer
+ * (matches Java's EndUI.drawBackground + AlphaComposite 0.35), plus the
+ * win/lose banner and "Press R to restart" prompt.
+ */
 export function drawEndScreen(
   ctx: CanvasRenderingContext2D,
+  background: HTMLImageElement,
   win: boolean,
   screenWidth: number,
   screenHeight: number,
 ): void {
   ctx.save();
-  ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+  ctx.drawImage(background, 0, 0, screenWidth, screenHeight);
+  ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
   ctx.fillRect(0, 0, screenWidth, screenHeight);
 
   ctx.font = END_FONT;
