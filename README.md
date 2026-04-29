@@ -1,69 +1,69 @@
-﻿# CMPT276S25_group9
+# Goblin's Keep
 
-# ![Goblins Keep](src/main/resources/UI_img/titleScreenText.png)
+![Goblins Keep](web/public/UI_img/titleScreenText.png)
 
 ## About the Game
-**Goblin's Keep** is a 2D tile-based escape game where players navigate through a maze-like castle while avoiding goblins and traps. Players must collect all the keys to unlock a lever and escape the castle. The game features dynamic goblin movement using pathfinding and random behavior, along with interactive elements like levers and traps.
 
-## 🎮 Goblin's Keep Tutorial
-  
-  Checkout a quick tutrial of the game
-🔗 [Click here](https://drive.google.com/file/d/1ERcdfPGlBXVyzfsQHKjrwMI3cFIEnpTp/view?usp=sharing)
+**Goblin's Keep** is a 2D tile-based escape game where the player navigates a maze-like castle while avoiding goblins and traps, collects 5 keys to activate a lever, and walks through the unlocked exit door to escape.
 
-### Key Features:
-- **AI Movement**: Goblins use A* pathfinding and random movement for dynamic behavior.
-- **Scoring System**: Track your progress and compete for high scores.
-- **Interactive Environment**: Levers, doors, and traps add complexity.
-- **Polished Visuals**: Smooth sprite transitions, animations, and environmental effects.
-- **Game States & UI**: Includes a main menu, in-game HUD, pause functionality, and a game-over screen.
+This repository now hosts the **TypeScript / browser port** of the original Java Swing project. The web build lives under `web/` and runs entirely in the browser.
 
----
+## Key Features
 
-## Prerequisites
-Before building or running the game, ensure you have the following installed:
-- [Java JDK](https://www.oracle.com/java/technologies/javase-downloads.html) (Version 23 or higher)
-- [Apache Maven](https://maven.apache.org/download.cgi) (Version 3.6.0 or higher)
+- **AI movement** — goblins use A* pathfinding when the player enters their line of sight, and wander randomly otherwise.
+- **Scoring** — keys, score-multiplier bonuses (meat), and trap penalties feed a final score breakdown shown on the end screen.
+- **State machine** — `MENU` / `INSTRUCTIONS` / `PLAYING` / `PAUSED` / `END`, with cursor-driven menus and looping background music.
+- **Pixel-art presentation** — fixed-step 60 Hz game loop on a 768×576 canvas, rendered through a Pokémon-style centered camera.
+- **Keyboard-only controls** — touch devices get a "mobile version coming soon" notice.
 
----
+## Controls
+
+| Action | Keys |
+| --- | --- |
+| Move | WASD or Arrow Keys |
+| Pause / resume | P or Esc |
+| Toggle music | M |
+| Menu navigation | Up / Down (or W / S), Enter / Space to select |
+
+## Stack
+
+- **Build / language** — Vite 8, TypeScript 6 (strict), pnpm 10
+- **Rendering** — HTML5 Canvas 2D with `image-rendering: pixelated`
+- **Audio** — Web Audio API
+- **Tests** — Vitest 4
+- **CI** — GitHub Actions (`.github/workflows/web.yml`)
 
 ## Build and Play
 
-### Build from Source
-You can build the game from source using Maven:
+From the `web/` directory:
 
-1. **Build the Game**:
-    ```bash
-    mvn clean package
-    ```
-
-2. **Run the Game**:
-    ```bash
-    java -jar target/goblinskeep-1.0-SNAPSHOT.jar
-    ```
-
-The resulting JAR file will be located in the `${basedir}/target` directory.
-
----
+```bash
+pnpm install
+pnpm dev      # starts the Vite dev server
+pnpm build    # type-check + production build into web/dist
+pnpm preview  # serves the production build locally
+```
 
 ## Test
 
-To run the unit and integration tests, use the following command:
-   ```bash
-      mvn test
-   ```
+From the `web/` directory:
 
----
+```bash
+pnpm test     # runs the Vitest suite (vitest run)
+```
 
 ## Authors
-Developed with love by:
+
+Originally developed for CMPT 276 by:
+
 - Maxime Nereyabagabo
 - Hugo Najafi
 - Arun Paudel
 - Srinivas Suggu
 
----
+TypeScript / browser refactor: Maxime Nereyabagabo.
 
 ## Acknowledgements
-We would like to express our gratitude to the following individuals and resources for their guidance and support during the development of this game:
-- [Dr. Saba Alimadadi](http://www.sfu.ca/~saba/) - For teaching us essential software development principles.
-- [RyiSnow](https://www.youtube.com/@RyiSnow) - For providing tutorials on game development in Java.
+
+- [Dr. Saba Alimadadi](http://www.sfu.ca/~saba/) — for teaching the software-development principles the original project was built on.
+- [RyiSnow](https://www.youtube.com/@RyiSnow) — for the Java game-development tutorials that informed the original architecture.
