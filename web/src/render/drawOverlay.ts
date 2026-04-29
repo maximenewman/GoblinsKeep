@@ -1,108 +1,150 @@
 /**
- * On-screen text rendered on top of the world: a small keys/score HUD in the
- * top-left and a centered end-game banner. Kept in one file because both
- * exist purely for player feedback and share the font setup.
+ * On-screen text rendered on top of the world: the in-play HUD (key icon,
+ * key counter, score, timer) plus the menu / pause / end overlays. All ports
+ * mirror Java's UI / MenuUI / PauseUI / EndUI surface.
  */
 
-// HUD uses a system monospace so digit glyphs are guaranteed regardless of
-// which pixel font happens to be loaded. The end-screen banner is large
-// enough that the pixel-art typography is fine there.
-const HUD_FONT = "bold 20px ui-monospace, 'Courier New', monospace";
-const END_FONT = "60px 'SuperPixel', 'PixelPurl', monospace";
-const PROMPT_FONT = "24px 'SuperPixel', 'PixelPurl', monospace";
+const TILE = 48;
+const HUD_FONT = "40px 'PixelPurl', monospace";
+const TITLE_FONT = "80px 'SuperPixel', 'PixelPurl', monospace";
+const BANNER_FONT = "60px 'SuperPixel', 'PixelPurl', monospace";
+const OPTION_FONT = "40px 'SuperPixel', 'PixelPurl', monospace";
 
-/** Draws a thin status row showing collected keys and current score. */
+/** Strokes a black border under the white fill — same look as Java's drawTextWithBorder. */
+function drawBorderedText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  borderWidth: number,
+): void {
+  ctx.lineJoin = "round";
+  ctx.lineWidth = borderWidth;
+  ctx.strokeStyle = "black";
+  ctx.strokeText(text, x, y);
+  ctx.fillText(text, x, y);
+}
+
+/**
+ * In-play HUD — key icon + "x = N", "score = N", "Time MM:SS" across the top row.
+ * Mirrors Java UI.drawPlaying (40f UIFont, key sprite at tileSize/2,tileSize/2-10,
+ * counters at the same tile offsets).
+ */
 export function drawHUD(
   ctx: CanvasRenderingContext2D,
-  state: { keysCollected: number; score: number },
+  state: { keysCollected: number; score: number; playTime: number },
+  keyImage: HTMLImageElement,
 ): void {
   ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(keyImage, TILE / 2, TILE / 2 - 10, TILE, TILE);
+
   ctx.font = HUD_FONT;
   ctx.textAlign = "left";
-  ctx.textBaseline = "top";
-
-  // Background pill — avoids per-glyph stroke artifacts that hide thin digits
-  // in pixel fonts and gives consistent contrast against any tile.
-  ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
-  ctx.fillRect(8, 8, 160, 56);
-
+  ctx.textBaseline = "alphabetic";
   ctx.fillStyle = "white";
-  ctx.fillText(`Keys ${state.keysCollected}`, 16, 14);
-  ctx.fillText(`Score ${state.score}`, 16, 40);
+
+  drawBorderedText(ctx, `x = ${state.keysCollected}`, (TILE * 3) / 2, TILE, 3);
+  drawBorderedText(ctx, `score = ${state.score}`, TILE * 6 + TILE / 2, TILE, 3);
+
+  const seconds = Math.floor(state.playTime);
+  const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
+  const ss = String(seconds % 60).padStart(2, "0");
+  drawBorderedText(ctx, `Time: ${mm}:${ss}`, TILE * 12, TILE, 3);
   ctx.restore();
 }
 
 /**
- * Title screen — draws the castle background full-bleed, then "Goblins Keep"
- * and the start prompt on top. Mirrors Java's MenuUI.draw which uses
- * titleScreen.png and writes the title text from code.
+ * Centered cursor menu — mirrors Java's drawCursorOptionsCentered. Renders
+ * each option at startTile + i tile rows down, with ">" drawn one tile to
+ * the left of the selected one.
+ */
+function drawCursorOptions(
+  ctx: CanvasRenderingContext2D,
+  options: readonly string[],
+  cursor: number,
+  startTile: number,
+  screenWidth: number,
+): void {
+  ctx.save();
+  ctx.font = OPTION_FONT;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "white";
+
+  for (let i = 0; i < options.length; i++) {
+    const text = options[i];
+    const y = TILE * (startTile + i);
+    const textWidth = ctx.measureText(text).width;
+    const x = (screenWidth - textWidth) / 2;
+    drawBorderedText(ctx, text, x, y, 4);
+    if (cursor === i) {
+      drawBorderedText(ctx, ">", x - TILE, y, 4);
+    }
+  }
+  ctx.restore();
+}
+
+/**
+ * Title screen — castle bg full-bleed + "Goblins Keep" banner + cursor
+ * menu. Mirrors Java MenuUI.draw with title at y = tileSize * 3.
  */
 export function drawMenuScreen(
   ctx: CanvasRenderingContext2D,
   background: HTMLImageElement,
+  options: readonly string[],
+  cursor: number,
   screenWidth: number,
   screenHeight: number,
 ): void {
   ctx.save();
   ctx.drawImage(background, 0, 0, screenWidth, screenHeight);
 
+  ctx.font = TITLE_FONT;
   ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.lineJoin = "round";
-  ctx.strokeStyle = "black";
-
-  // Java title: y = tileSize * 3 (= 144 in a 768x576 canvas). Our viewport is
-  // 768x432, so the same pixel offset still sits above the castle silhouette.
-  const cx = screenWidth / 2;
-  ctx.font = END_FONT;
-  ctx.lineWidth = 8;
+  ctx.textBaseline = "alphabetic";
   ctx.fillStyle = "white";
-  ctx.strokeText("Goblins Keep", cx, 100);
-  ctx.fillText("Goblins Keep", cx, 100);
-
-  ctx.font = PROMPT_FONT;
-  ctx.lineWidth = 4;
-  ctx.fillStyle = "white";
-  const prompt = "Press Enter to start";
-  ctx.strokeText(prompt, cx, screenHeight - 40);
-  ctx.fillText(prompt, cx, screenHeight - 40);
+  drawBorderedText(ctx, "Goblins Keep", screenWidth / 2, TILE * 3, 6);
   ctx.restore();
+
+  drawCursorOptions(ctx, options, cursor, 8, screenWidth);
 }
 
-/** Dims the playfield and centers a "PAUSED" banner. */
+/**
+ * Paused overlay — keeps the frozen world visible underneath, dims with 30%
+ * black (matches Java UI.drawPaused), draws "PAUSED" + cursor menu.
+ */
 export function drawPauseScreen(
   ctx: CanvasRenderingContext2D,
+  options: readonly string[],
+  cursor: number,
   screenWidth: number,
   screenHeight: number,
 ): void {
   ctx.save();
-  ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+  ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
   ctx.fillRect(0, 0, screenWidth, screenHeight);
 
-  ctx.font = END_FONT;
+  ctx.font = TITLE_FONT;
   ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.lineWidth = 8;
-  ctx.lineJoin = "round";
-  ctx.strokeStyle = "black";
+  ctx.textBaseline = "alphabetic";
   ctx.fillStyle = "white";
-
-  const cx = screenWidth / 2;
-  const cy = screenHeight / 2;
-  ctx.strokeText("PAUSED", cx, cy);
-  ctx.fillText("PAUSED", cx, cy);
+  drawBorderedText(ctx, "PAUSED", screenWidth / 2, TILE * 3, 6);
   ctx.restore();
+
+  drawCursorOptions(ctx, options, cursor, 8, screenWidth);
 }
 
 /**
- * End screen drawn over the win/lose art with a 35% black dim layer
- * (matches Java's EndUI.drawBackground + AlphaComposite 0.35), plus the
- * win/lose banner and "Press R to restart" prompt.
+ * End screen — win/lose art full-bleed, 35% black dim (matches Java
+ * EndUI.drawBackground + AlphaComposite 0.35), banner, and cursor menu.
  */
 export function drawEndScreen(
   ctx: CanvasRenderingContext2D,
   background: HTMLImageElement,
   win: boolean,
+  options: readonly string[],
+  cursor: number,
   screenWidth: number,
   screenHeight: number,
 ): void {
@@ -111,25 +153,12 @@ export function drawEndScreen(
   ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
   ctx.fillRect(0, 0, screenWidth, screenHeight);
 
-  ctx.font = END_FONT;
+  ctx.font = BANNER_FONT;
   ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.lineWidth = 8;
-  ctx.lineJoin = "round";
-  ctx.strokeStyle = "black";
+  ctx.textBaseline = "alphabetic";
   ctx.fillStyle = win ? "#34d399" : "#ef4444";
-
-  const message = win ? "YOU WIN!" : "GAME OVER";
-  const cx = screenWidth / 2;
-  const cy = screenHeight / 2;
-  ctx.strokeText(message, cx, cy);
-  ctx.fillText(message, cx, cy);
-
-  ctx.font = PROMPT_FONT;
-  ctx.lineWidth = 4;
-  ctx.fillStyle = "white";
-  const prompt = "Press R to restart";
-  ctx.strokeText(prompt, cx, cy + 60);
-  ctx.fillText(prompt, cx, cy + 60);
+  drawBorderedText(ctx, win ? "YOU WON!" : "YOU LOSE", screenWidth / 2, TILE * 2, 6);
   ctx.restore();
+
+  drawCursorOptions(ctx, options, cursor, 9, screenWidth);
 }

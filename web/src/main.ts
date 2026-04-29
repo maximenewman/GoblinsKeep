@@ -58,7 +58,7 @@ const builder: MapBuilder = {
 
 const sound = new Sound();
 
-const [, , , , titleImage, winImage, loseEnemyImage, loseScoreImage] = await Promise.all([
+const [, , , , titleImage, winImage, loseEnemyImage, loseScoreImage, keyImage] = await Promise.all([
   tileM.loadTiles(),
   objectM.loadSprites(),
   sound.loadAll(),
@@ -67,6 +67,7 @@ const [, , , , titleImage, winImage, loseEnemyImage, loseScoreImage] = await Pro
   loadImage("/UI_img/win.png"),
   loadImage("/UI_img/end screen (bg).png"),
   loadImage("/UI_img/lose.png"),
+  loadImage("/objects/Key.png"),
 ]);
 
 const mapText = await fetch("/maps/world1.txt").then((r) => r.text());
@@ -149,8 +150,34 @@ window.addEventListener("keydown", unlockAudio);
 window.addEventListener("pointerdown", unlockAudio);
 
 let status: GameStatus = GameStatus.MENU;
-/** Guards against R being held / pressed twice while the async restart is mid-flight. */
+let cursor = 0;
+let playTime = 0;
+/** Guards against double-fire while the async restart is mid-flight. */
 let restarting = false;
+
+// Per-state menu options. QUIT routes to MENU since we're a webgame and can't
+// actually exit; "BACK TO MENU" is the same target with the Java label.
+const MENU_OPTIONS = ["PLAY", "QUIT"] as const;
+const PAUSE_OPTIONS = ["RESUME", "RESTART", "BACK TO MENU"] as const;
+const END_OPTIONS = ["RESTART", "BACK TO MENU", "QUIT"] as const;
+
+const optionsFor = (s: GameStatus): readonly string[] => {
+  if (s === GameStatus.MENU) return MENU_OPTIONS;
+  if (s === GameStatus.PAUSED) return PAUSE_OPTIONS;
+  if (s === GameStatus.END) return END_OPTIONS;
+  return [];
+};
+
+const setStatus = (next: GameStatus): void => {
+  status = next;
+  cursor = 0;
+};
+
+const goToMenu = (): void => {
+  setStatus(GameStatus.MENU);
+  sound.setFile(Sound.MAIN_MENU);
+  sound.loop();
+};
 
 const restart = async (): Promise<void> => {
   if (restarting) return;
@@ -174,11 +201,33 @@ const restart = async (): Promise<void> => {
   goblins = spawnGoblins();
   await Promise.all(goblins.map((g) => g.loadSprites()));
 
-  status = GameStatus.PLAYING;
+  playTime = 0;
+  setStatus(GameStatus.PLAYING);
   sound.setFile(Sound.INTRO);
   sound.loop();
 
   restarting = false;
+};
+
+const selectMenuOption = (option: string): void => {
+  switch (option) {
+    case "PLAY":
+    case "RESTART":
+      void restart();
+      break;
+    case "RESUME":
+      setStatus(GameStatus.PLAYING);
+      sound.resume();
+      break;
+    case "BACK TO MENU":
+      goToMenu();
+      break;
+    case "QUIT":
+      // Browser tab can't be closed by script unless opened via window.open.
+      // Fall back to main menu when we got here from END; no-op from MENU.
+      if (status === GameStatus.END) goToMenu();
+      break;
+  }
 };
 
 window.addEventListener("keydown", (event) => {
@@ -186,24 +235,26 @@ window.addEventListener("keydown", (event) => {
     sound.toggle();
     return;
   }
-  if (event.code === "Enter" && status === GameStatus.MENU) {
-    status = GameStatus.PLAYING;
-    sound.setFile(Sound.INTRO);
-    sound.loop();
-    return;
-  }
-  if (event.code === "KeyR" && status === GameStatus.END) {
-    void restart();
-    return;
-  }
   if (event.code === "KeyP" || event.code === "Escape") {
     if (status === GameStatus.PLAYING) {
-      status = GameStatus.PAUSED;
+      setStatus(GameStatus.PAUSED);
       sound.pause();
     } else if (status === GameStatus.PAUSED) {
-      status = GameStatus.PLAYING;
+      setStatus(GameStatus.PLAYING);
       sound.resume();
     }
+    return;
+  }
+
+  const options = optionsFor(status);
+  if (options.length === 0) return;
+
+  if (event.code === "ArrowUp" || event.code === "KeyW") {
+    cursor = (cursor - 1 + options.length) % options.length;
+  } else if (event.code === "ArrowDown" || event.code === "KeyS") {
+    cursor = (cursor + 1) % options.length;
+  } else if (event.code === "Enter" || event.code === "Space") {
+    selectMenuOption(options[cursor]);
   }
 });
 
@@ -222,8 +273,9 @@ const tick = (now: number): void => {
       for (const goblin of goblins) {
         goblin.update();
       }
+      playTime += 1 / TICK_HZ;
       if (mapHandler.gameEnded()) {
-        status = GameStatus.END;
+        setStatus(GameStatus.END);
         sound.pause();
       }
     }
@@ -233,7 +285,13 @@ const tick = (now: number): void => {
   }
 
   if (status === GameStatus.MENU) {
-    drawMenuScreen(ctx, titleImage, SCREEN_WIDTH, SCREEN_HEIGHT);
+    drawMenuScreen(ctx, titleImage, MENU_OPTIONS, cursor, SCREEN_WIDTH, SCREEN_HEIGHT);
+  } else if (status === GameStatus.END) {
+    const win = mapHandler.isGameWin();
+    const endImage = win
+      ? winImage
+      : (mapHandler.getEndReason() === "SCORE" ? loseScoreImage : loseEnemyImage);
+    drawEndScreen(ctx, endImage, win, END_OPTIONS, cursor, SCREEN_WIDTH, SCREEN_HEIGHT);
   } else {
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -246,15 +304,10 @@ const tick = (now: number): void => {
     drawHUD(ctx, {
       keysCollected: mapHandler.getKeysCollected(),
       score: mapHandler.getScore(),
-    });
-    if (status === GameStatus.END) {
-      const win = mapHandler.isGameWin();
-      const endImage = win
-        ? winImage
-        : (mapHandler.getEndReason() === "SCORE" ? loseScoreImage : loseEnemyImage);
-      drawEndScreen(ctx, endImage, win, SCREEN_WIDTH, SCREEN_HEIGHT);
-    } else if (status === GameStatus.PAUSED) {
-      drawPauseScreen(ctx, SCREEN_WIDTH, SCREEN_HEIGHT);
+      playTime,
+    }, keyImage);
+    if (status === GameStatus.PAUSED) {
+      drawPauseScreen(ctx, PAUSE_OPTIONS, cursor, SCREEN_WIDTH, SCREEN_HEIGHT);
     }
   }
 
