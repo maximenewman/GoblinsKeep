@@ -266,7 +266,13 @@ const selectMenuOption = (option: string): void => {
       setStatus(GameStatus.INSTRUCTIONS);
       break;
     case "BACK TO MENU":
-      goToMenu();
+      // From INSTRUCTIONS the menu loop is already the active track — flip
+      // status only so the audio keeps playing without a restart.
+      if (status === GameStatus.INSTRUCTIONS) {
+        setStatus(GameStatus.MENU);
+      } else {
+        goToMenu();
+      }
       break;
   }
 };
