@@ -50,8 +50,12 @@
       align-items: center;
       gap: 0;
       /* scale the whole frame to fit viewport */
-      --base-w: 1260px; /* 768 + 36px side borders */
-      --base-h: 939px; /* 576 + header + footer + borders */
+      /* Sized so the canvas displays at ~1.2x (~922×692) — small bump over
+         native res that comfortably fits typical viewports. Non-integer
+         scaling means image-rendering: pixelated mixes 1px/2px pixel widths,
+         but it's a deliberate trade for a comfortable display size. */
+      --base-w: 994px; /* ~922 canvas + 36px side panel × 2 */
+      --base-h: 776px; /* ~692 canvas + ~84px header/footer chrome */
       width: var(--base-w);
       height: var(--base-h);
       transform-origin: center center;
@@ -290,8 +294,8 @@
       const vh = window.innerHeight;
       // Must match the wrapper's --base-w / --base-h above so transform: scale()
       // actually fits the rendered size into the viewport.
-      const baseW = 1260;
-      const baseH = 939;
+      const baseW = 994;
+      const baseH = 776;
       const scale = Math.min(vw / baseW, vh / baseH, 1);
       wrapper.style.transform = `scale(${scale})`;
     }

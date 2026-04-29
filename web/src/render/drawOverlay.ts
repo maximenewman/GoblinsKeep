@@ -10,7 +10,7 @@ const TITLE_FONT = "80px 'SuperPixel', 'PixelPurl', monospace";
 const BANNER_FONT = "60px 'SuperPixel', 'PixelPurl', monospace";
 const OPTION_FONT = "40px 'SuperPixel', 'PixelPurl', monospace";
 const BODY_FONT = "28px 'PixelPurl', monospace";
-const MESSAGE_FONT = "20px 'PixelPurl', monospace";
+const MESSAGE_FONT = "28px 'PixelPurl', monospace";
 
 /** Strokes a black border under the white fill — same look as Java's drawTextWithBorder. */
 function drawBorderedText(
