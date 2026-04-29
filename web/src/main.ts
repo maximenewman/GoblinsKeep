@@ -11,7 +11,13 @@ import { PathFinder, type Grid } from "./pathfinder/PathFinder.ts";
 import { Camera } from "./render/Camera.ts";
 import { drawObjects } from "./render/drawObjects.ts";
 import { drawTileMap } from "./render/drawTileMap.ts";
-import { drawEndScreen, drawHUD, drawMenuScreen, drawPauseScreen } from "./render/drawOverlay.ts";
+import {
+  drawEndScreen,
+  drawHUD,
+  drawInstructionsScreen,
+  drawMenuScreen,
+  drawPauseScreen,
+} from "./render/drawOverlay.ts";
 import { loadImage } from "./render/loadImage.ts";
 import { TileManager } from "./tile/TileManager.ts";
 
@@ -155,16 +161,34 @@ let playTime = 0;
 /** Guards against double-fire while the async restart is mid-flight. */
 let restarting = false;
 
-// Per-state menu options. QUIT routes to MENU since we're a webgame and can't
-// actually exit; "BACK TO MENU" is the same target with the Java label.
-const MENU_OPTIONS = ["PLAY", "QUIT"] as const;
+// Per-state menu options. QUIT is dropped from MENU and END since browser
+// tabs can't self-close — BACK TO MENU covers the "leave" intent.
+const MENU_OPTIONS = ["PLAY", "INSTRUCTIONS"] as const;
 const PAUSE_OPTIONS = ["RESUME", "RESTART", "BACK TO MENU"] as const;
-const END_OPTIONS = ["RESTART", "BACK TO MENU", "QUIT"] as const;
+const END_OPTIONS = ["RESTART", "BACK TO MENU"] as const;
+const INSTRUCTIONS_OPTIONS = ["BACK TO MENU"] as const;
+
+const INSTRUCTIONS_LINES: readonly string[] = [
+  "After getting trapped in the Goblin king's maze-like castle,",
+  "you must now find your way out and escape to the woods",
+  "MOVEMENT: WASD or Arrow Keys to move UP, LEFT, DOWN, RIGHT",
+  "MUSIC: Press M to toggle background music on/off",
+  "PAUSE: Press P or Esc to pause/resume",
+  "MENUS: Up/Down to navigate, Enter or Space to select",
+  "HOW TO ESCAPE:",
+  "Collect the 5 key fragments to unlock the lever",
+  "After the lever is unlocked find it and activate it to open the escape door",
+  "Once the escape door is opened, find it to escape out the castle",
+  "Collect meat to increase your score",
+  "If you step into an acid puddle you will lose score",
+  "If the roaming goblins capture you or your score becomes negative you will lose",
+];
 
 const optionsFor = (s: GameStatus): readonly string[] => {
   if (s === GameStatus.MENU) return MENU_OPTIONS;
   if (s === GameStatus.PAUSED) return PAUSE_OPTIONS;
   if (s === GameStatus.END) return END_OPTIONS;
+  if (s === GameStatus.INSTRUCTIONS) return INSTRUCTIONS_OPTIONS;
   return [];
 };
 
@@ -219,13 +243,11 @@ const selectMenuOption = (option: string): void => {
       setStatus(GameStatus.PLAYING);
       sound.resume();
       break;
+    case "INSTRUCTIONS":
+      setStatus(GameStatus.INSTRUCTIONS);
+      break;
     case "BACK TO MENU":
       goToMenu();
-      break;
-    case "QUIT":
-      // Browser tab can't be closed by script unless opened via window.open.
-      // Fall back to main menu when we got here from END; no-op from MENU.
-      if (status === GameStatus.END) goToMenu();
       break;
   }
 };
@@ -286,6 +308,16 @@ const tick = (now: number): void => {
 
   if (status === GameStatus.MENU) {
     drawMenuScreen(ctx, titleImage, MENU_OPTIONS, cursor, SCREEN_WIDTH, SCREEN_HEIGHT);
+  } else if (status === GameStatus.INSTRUCTIONS) {
+    drawInstructionsScreen(
+      ctx,
+      titleImage,
+      INSTRUCTIONS_LINES,
+      INSTRUCTIONS_OPTIONS,
+      cursor,
+      SCREEN_WIDTH,
+      SCREEN_HEIGHT,
+    );
   } else if (status === GameStatus.END) {
     const win = mapHandler.isGameWin();
     const endImage = win

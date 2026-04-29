@@ -9,6 +9,7 @@ const HUD_FONT = "40px 'PixelPurl', monospace";
 const TITLE_FONT = "80px 'SuperPixel', 'PixelPurl', monospace";
 const BANNER_FONT = "60px 'SuperPixel', 'PixelPurl', monospace";
 const OPTION_FONT = "40px 'SuperPixel', 'PixelPurl', monospace";
+const BODY_FONT = "25px 'PixelPurl', monospace";
 
 /** Strokes a black border under the white fill — same look as Java's drawTextWithBorder. */
 function drawBorderedText(
@@ -133,6 +134,40 @@ export function drawPauseScreen(
   ctx.restore();
 
   drawCursorOptions(ctx, options, cursor, 8, screenWidth);
+}
+
+/**
+ * Instructions screen — title bg + 60% black dim, "INSTRUCTIONS" header,
+ * body lines, and the BACK TO MENU cursor option. Mirrors Java InstructionsUI.draw.
+ */
+export function drawInstructionsScreen(
+  ctx: CanvasRenderingContext2D,
+  background: HTMLImageElement,
+  lines: readonly string[],
+  options: readonly string[],
+  cursor: number,
+  screenWidth: number,
+  screenHeight: number,
+): void {
+  ctx.save();
+  ctx.drawImage(background, 0, 0, screenWidth, screenHeight);
+  ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+  ctx.fillRect(0, 0, screenWidth, screenHeight);
+
+  ctx.font = BANNER_FONT;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "white";
+  drawBorderedText(ctx, "INSTRUCTIONS", screenWidth / 2, TILE * 2, 6);
+
+  ctx.font = BODY_FONT;
+  for (let i = 0; i < lines.length; i++) {
+    const y = (TILE / 2) * (8 + i);
+    drawBorderedText(ctx, lines[i], screenWidth / 2, y, 2);
+  }
+  ctx.restore();
+
+  drawCursorOptions(ctx, options, cursor, 11, screenWidth);
 }
 
 /**
