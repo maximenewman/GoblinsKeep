@@ -355,7 +355,20 @@ const tick = (now: number): void => {
     const endImage = win
       ? winImage
       : (mapHandler.getEndReason() === "SCORE" ? loseScoreImage : loseEnemyImage);
-    drawEndScreen(ctx, endImage, win, END_OPTIONS, cursor, SCREEN_WIDTH, SCREEN_HEIGHT);
+    drawEndScreen(
+      ctx,
+      endImage,
+      {
+        win,
+        keysCollected: mapHandler.getKeysCollected(),
+        regularScore: mapHandler.getScore(),
+        playTime,
+      },
+      END_OPTIONS,
+      cursor,
+      SCREEN_WIDTH,
+      SCREEN_HEIGHT,
+    );
   } else {
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);

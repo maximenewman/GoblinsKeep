@@ -199,12 +199,18 @@ export function drawInstructionsScreen(
 
 /**
  * End screen — win/lose art full-bleed, 35% black dim (matches Java
- * EndUI.drawBackground + AlphaComposite 0.35), banner, and cursor menu.
+ * EndUI.drawBackground + AlphaComposite 0.35), banner, score breakdown,
+ * and cursor menu.
  */
 export function drawEndScreen(
   ctx: CanvasRenderingContext2D,
   background: HTMLImageElement,
-  win: boolean,
+  state: {
+    win: boolean;
+    keysCollected: number;
+    regularScore: number;
+    playTime: number;
+  },
   options: readonly string[],
   cursor: number,
   screenWidth: number,
@@ -215,12 +221,48 @@ export function drawEndScreen(
   ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
   ctx.fillRect(0, 0, screenWidth, screenHeight);
 
-  ctx.font = BANNER_FONT;
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = win ? "#34d399" : "#ef4444";
-  drawBorderedText(ctx, win ? "YOU WON!" : "YOU LOSE", screenWidth / 2, TILE * 2, 6);
+
+  // Banner — Java uses "CONGRATULATIONS" + "YOU WON!" on win, "YOU LOSE" on loss.
+  ctx.font = BANNER_FONT;
+  ctx.fillStyle = state.win ? "#34d399" : "#ef4444";
+  if (state.win) {
+    drawBorderedText(ctx, "CONGRATULATIONS", screenWidth / 2, TILE * 2, 6);
+    drawBorderedText(ctx, "YOU WON!", screenWidth / 2, TILE * 2 + 72, 6);
+  } else {
+    drawBorderedText(ctx, "YOU LOSE", screenWidth / 2, TILE * 2, 6);
+  }
+
+  // Total score = keys × 250 + regular score, plus playtime, both larger.
+  const keyBonus = state.keysCollected * 250;
+  const total = keyBonus + state.regularScore;
+  const seconds = Math.floor(state.playTime);
+  const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
+  const ss = String(seconds % 60).padStart(2, "0");
+
+  ctx.font = HUD_FONT;
+  ctx.fillStyle = "white";
+  drawBorderedText(ctx, `Total Score: ${total}`, screenWidth / 2, TILE * 5, 4);
+  drawBorderedText(ctx, `Time: ${mm}:${ss}`, screenWidth / 2, TILE * 6, 4);
+
+  // Score breakdown — smaller body text.
+  ctx.font = BODY_FONT;
+  drawBorderedText(
+    ctx,
+    `Keys Collected: ${state.keysCollected} x 250 = ${keyBonus}`,
+    screenWidth / 2,
+    TILE * 7,
+    2,
+  );
+  drawBorderedText(
+    ctx,
+    `Regular Score: ${state.regularScore}`,
+    screenWidth / 2,
+    TILE * 7 + 36,
+    2,
+  );
   ctx.restore();
 
-  drawCursorOptions(ctx, options, cursor, TILE * 9, screenWidth);
+  drawCursorOptions(ctx, options, cursor, TILE * 9 + 24, screenWidth);
 }
