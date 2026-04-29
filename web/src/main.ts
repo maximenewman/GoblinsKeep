@@ -71,14 +71,14 @@ const [, , , , titleImage, winImage, loseEnemyImage, loseScoreImage, keyImage] =
   objectM.loadSprites(),
   sound.loadAll(),
   document.fonts.ready,
-  loadImage("/UI_img/titleScreen.png"),
-  loadImage("/UI_img/win.png"),
-  loadImage("/UI_img/end screen (bg).png"),
-  loadImage("/UI_img/lose.png"),
-  loadImage("/objects/Key.png"),
+  loadImage(`${import.meta.env.BASE_URL}UI_img/titleScreen.png`),
+  loadImage(`${import.meta.env.BASE_URL}UI_img/win.png`),
+  loadImage(`${import.meta.env.BASE_URL}UI_img/end screen (bg).png`),
+  loadImage(`${import.meta.env.BASE_URL}UI_img/lose.png`),
+  loadImage(`${import.meta.env.BASE_URL}objects/Key.png`),
 ]);
 
-const mapText = await fetch("/maps/world1.txt").then((r) => r.text());
+const mapText = await fetch(`${import.meta.env.BASE_URL}maps/world1.txt`).then((r) => r.text());
 const mapGen = new MapGenerator(tileM, builder);
 mapGen.loadMap(mapText);
 

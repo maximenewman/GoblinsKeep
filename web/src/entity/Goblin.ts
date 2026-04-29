@@ -47,14 +47,14 @@ export abstract class Goblin extends Entity {
   /** Loads all eight goblin sprites in parallel. */
   async loadSprites(): Promise<void> {
     const [up1, up2, down1, down2, left1, left2, right1, right2] = await Promise.all([
-      loadImage("/goblin/orc_up_1.png"),
-      loadImage("/goblin/orc_up_2.png"),
-      loadImage("/goblin/orc_down_1.png"),
-      loadImage("/goblin/orc_down_2.png"),
-      loadImage("/goblin/orc_left_1.png"),
-      loadImage("/goblin/orc_left_2.png"),
-      loadImage("/goblin/orc_right_1.png"),
-      loadImage("/goblin/orc_right_2.png"),
+      loadImage(`${import.meta.env.BASE_URL}goblin/orc_up_1.png`),
+      loadImage(`${import.meta.env.BASE_URL}goblin/orc_up_2.png`),
+      loadImage(`${import.meta.env.BASE_URL}goblin/orc_down_1.png`),
+      loadImage(`${import.meta.env.BASE_URL}goblin/orc_down_2.png`),
+      loadImage(`${import.meta.env.BASE_URL}goblin/orc_left_1.png`),
+      loadImage(`${import.meta.env.BASE_URL}goblin/orc_left_2.png`),
+      loadImage(`${import.meta.env.BASE_URL}goblin/orc_right_1.png`),
+      loadImage(`${import.meta.env.BASE_URL}goblin/orc_right_2.png`),
     ]);
     this.up1 = up1;
     this.up2 = up2;

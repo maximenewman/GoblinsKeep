@@ -24,11 +24,11 @@ export class TileManager {
    */
   async loadTiles(): Promise<void> {
     await Promise.all([
-      this.mapNumToTile("/tiles/floor.png", 0, false),
-      this.mapNumToTile("/tiles/wall.png", 1, true),
-      this.mapNumToTile("/tiles/grass_tile.png", 8, false),
-      this.mapNumToTile("/tiles/dirt.png", 9, false),
-      this.mapNumToTile("/tiles/grass_tile.png", 14, false),
+      this.mapNumToTile(`${import.meta.env.BASE_URL}tiles/floor.png`, 0, false),
+      this.mapNumToTile(`${import.meta.env.BASE_URL}tiles/wall.png`, 1, true),
+      this.mapNumToTile(`${import.meta.env.BASE_URL}tiles/grass_tile.png`, 8, false),
+      this.mapNumToTile(`${import.meta.env.BASE_URL}tiles/dirt.png`, 9, false),
+      this.mapNumToTile(`${import.meta.env.BASE_URL}tiles/grass_tile.png`, 14, false),
     ]);
   }
 

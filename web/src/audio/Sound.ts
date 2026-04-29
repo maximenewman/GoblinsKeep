@@ -16,8 +16,8 @@ export class Sound {
   static readonly INTRO = 1;
 
   private static readonly SOUND_PATHS: readonly string[] = [
-    "/sound/mainmenu.ogg",
-    "/sound/Intro.ogg",
+    `${import.meta.env.BASE_URL}sound/mainmenu.ogg`,
+    `${import.meta.env.BASE_URL}sound/Intro.ogg`,
   ];
 
   /** Default enabled. Toggled by the M key. */

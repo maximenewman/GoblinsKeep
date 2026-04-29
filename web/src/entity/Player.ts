@@ -55,14 +55,14 @@ export class Player extends Entity {
 
   async loadSprites(): Promise<void> {
     const [up1, up2, down1, down2, left1, left2, right1, right2] = await Promise.all([
-      loadImage("/player/up1.png"),
-      loadImage("/player/up2.png"),
-      loadImage("/player/down1.png"),
-      loadImage("/player/down2.png"),
-      loadImage("/player/left1.png"),
-      loadImage("/player/left2.png"),
-      loadImage("/player/right1.png"),
-      loadImage("/player/right2.png"),
+      loadImage(`${import.meta.env.BASE_URL}player/up1.png`),
+      loadImage(`${import.meta.env.BASE_URL}player/up2.png`),
+      loadImage(`${import.meta.env.BASE_URL}player/down1.png`),
+      loadImage(`${import.meta.env.BASE_URL}player/down2.png`),
+      loadImage(`${import.meta.env.BASE_URL}player/left1.png`),
+      loadImage(`${import.meta.env.BASE_URL}player/left2.png`),
+      loadImage(`${import.meta.env.BASE_URL}player/right1.png`),
+      loadImage(`${import.meta.env.BASE_URL}player/right2.png`),
     ]);
     this.up1 = up1;
     this.up2 = up2;

@@ -64,15 +64,15 @@ export class ObjectManager {
       treeVariant0,
       treeVariant1,
     ] = await Promise.all([
-      loadImage("/objects/Key.png"),
-      loadImage("/objects/trap1.png"),
-      loadImage("/objects/bonus1.png"),
-      loadImage("/objects/lever1.png"),
-      loadImage("/objects/lever2.png"),
-      loadImage("/objects/door1.png"),
-      loadImage("/objects/door2.png"),
-      loadImage("/objects/goodTree2.png"), // Java case 13 → variant 0
-      loadImage("/objects/goodTree1.png"), // Java case 12 → variant 1
+      loadImage(`${import.meta.env.BASE_URL}objects/Key.png`),
+      loadImage(`${import.meta.env.BASE_URL}objects/trap1.png`),
+      loadImage(`${import.meta.env.BASE_URL}objects/bonus1.png`),
+      loadImage(`${import.meta.env.BASE_URL}objects/lever1.png`),
+      loadImage(`${import.meta.env.BASE_URL}objects/lever2.png`),
+      loadImage(`${import.meta.env.BASE_URL}objects/door1.png`),
+      loadImage(`${import.meta.env.BASE_URL}objects/door2.png`),
+      loadImage(`${import.meta.env.BASE_URL}objects/goodTree2.png`), // Java case 13 → variant 0
+      loadImage(`${import.meta.env.BASE_URL}objects/goodTree1.png`), // Java case 12 → variant 1
     ]);
     this.setSprites({
       key,
