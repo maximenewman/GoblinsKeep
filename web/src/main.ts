@@ -1,3 +1,4 @@
+import { GameStatus } from "./app/GameStatus.ts";
 import { MapGenerator, type MapBuilder } from "./app/MapGenerator.ts";
 import { MapHandler } from "./app/MapHandler.ts";
 import { Sound } from "./audio/Sound.ts";
@@ -10,7 +11,7 @@ import { PathFinder, type Grid } from "./pathfinder/PathFinder.ts";
 import { Camera } from "./render/Camera.ts";
 import { drawObjects } from "./render/drawObjects.ts";
 import { drawTileMap } from "./render/drawTileMap.ts";
-import { drawEndScreen, drawHUD, drawPauseScreen } from "./render/drawOverlay.ts";
+import { drawEndScreen, drawHUD, drawMenuScreen, drawPauseScreen } from "./render/drawOverlay.ts";
 import { TileManager } from "./tile/TileManager.ts";
 
 const WORLD_COL = 60;
@@ -142,9 +143,7 @@ const unlockAudio = (): void => {
 window.addEventListener("keydown", unlockAudio);
 window.addEventListener("pointerdown", unlockAudio);
 
-let paused = false;
-/** Latches once the end screen pauses music, so we don't restart pause every frame. */
-let endMusicHandled = false;
+let status: GameStatus = GameStatus.MENU;
 /** Guards against R being held / pressed twice while the async restart is mid-flight. */
 let restarting = false;
 
@@ -170,9 +169,8 @@ const restart = async (): Promise<void> => {
   goblins = spawnGoblins();
   await Promise.all(goblins.map((g) => g.loadSprites()));
 
-  paused = false;
-  endMusicHandled = false;
-  sound.setFile(Sound.MAIN_MENU);
+  status = GameStatus.PLAYING;
+  sound.setFile(Sound.INTRO);
   sound.loop();
 
   restarting = false;
@@ -183,15 +181,24 @@ window.addEventListener("keydown", (event) => {
     sound.toggle();
     return;
   }
-  if (event.code === "KeyR" && mapHandler.gameEnded()) {
+  if (event.code === "Enter" && status === GameStatus.MENU) {
+    status = GameStatus.PLAYING;
+    sound.setFile(Sound.INTRO);
+    sound.loop();
+    return;
+  }
+  if (event.code === "KeyR" && status === GameStatus.END) {
     void restart();
     return;
   }
   if (event.code === "KeyP" || event.code === "Escape") {
-    if (mapHandler.gameEnded()) return;
-    paused = !paused;
-    if (paused) sound.pause();
-    else sound.resume();
+    if (status === GameStatus.PLAYING) {
+      status = GameStatus.PAUSED;
+      sound.pause();
+    } else if (status === GameStatus.PAUSED) {
+      status = GameStatus.PLAYING;
+      sound.resume();
+    }
   }
 });
 
@@ -204,11 +211,15 @@ const tick = (now: number): void => {
   accumulator += dt;
 
   while (accumulator >= TICK_MS) {
-    if (!paused && !mapHandler.gameEnded()) {
+    if (status === GameStatus.PLAYING) {
       player.update(collisionChecker);
       mapHandler.updateTimer();
       for (const goblin of goblins) {
         goblin.update();
+      }
+      if (mapHandler.gameEnded()) {
+        status = GameStatus.END;
+        sound.pause();
       }
     }
     camera.targetWorldX = player.WorldX;
@@ -216,27 +227,26 @@ const tick = (now: number): void => {
     accumulator -= TICK_MS;
   }
 
-  if (mapHandler.gameEnded() && !endMusicHandled) {
-    sound.pause();
-    endMusicHandled = true;
-  }
-
-  ctx.fillStyle = "black";
-  ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-  drawTileMap(ctx, tileM, camera);
-  drawObjects(ctx, objectM, camera);
-  player.draw(ctx);
-  for (const goblin of goblins) {
-    goblin.draw(ctx, camera);
-  }
-  drawHUD(ctx, {
-    keysCollected: mapHandler.getKeysCollected(),
-    score: mapHandler.getScore(),
-  });
-  if (mapHandler.gameEnded()) {
-    drawEndScreen(ctx, mapHandler.isGameWin(), SCREEN_WIDTH, SCREEN_HEIGHT);
-  } else if (paused) {
-    drawPauseScreen(ctx, SCREEN_WIDTH, SCREEN_HEIGHT);
+  if (status === GameStatus.MENU) {
+    drawMenuScreen(ctx, SCREEN_WIDTH, SCREEN_HEIGHT);
+  } else {
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    drawTileMap(ctx, tileM, camera);
+    drawObjects(ctx, objectM, camera);
+    player.draw(ctx);
+    for (const goblin of goblins) {
+      goblin.draw(ctx, camera);
+    }
+    drawHUD(ctx, {
+      keysCollected: mapHandler.getKeysCollected(),
+      score: mapHandler.getScore(),
+    });
+    if (status === GameStatus.END) {
+      drawEndScreen(ctx, mapHandler.isGameWin(), SCREEN_WIDTH, SCREEN_HEIGHT);
+    } else if (status === GameStatus.PAUSED) {
+      drawPauseScreen(ctx, SCREEN_WIDTH, SCREEN_HEIGHT);
+    }
   }
 
   requestAnimationFrame(tick);

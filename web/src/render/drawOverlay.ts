@@ -32,6 +32,38 @@ export function drawHUD(
   ctx.restore();
 }
 
+/** Title screen with "GOBLIN'S KEEP" + "Press Enter to start" prompt. */
+export function drawMenuScreen(
+  ctx: CanvasRenderingContext2D,
+  screenWidth: number,
+  screenHeight: number,
+): void {
+  ctx.save();
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, screenWidth, screenHeight);
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "black";
+
+  const cx = screenWidth / 2;
+  const cy = screenHeight / 2;
+
+  ctx.font = END_FONT;
+  ctx.lineWidth = 8;
+  ctx.fillStyle = "#fbbf24";
+  ctx.strokeText("GOBLIN'S KEEP", cx, cy - 20);
+  ctx.fillText("GOBLIN'S KEEP", cx, cy - 20);
+
+  ctx.font = PROMPT_FONT;
+  ctx.lineWidth = 4;
+  ctx.fillStyle = "white";
+  ctx.strokeText("Press Enter to start", cx, cy + 50);
+  ctx.fillText("Press Enter to start", cx, cy + 50);
+  ctx.restore();
+}
+
 /** Dims the playfield and centers a "PAUSED" banner. */
 export function drawPauseScreen(
   ctx: CanvasRenderingContext2D,
