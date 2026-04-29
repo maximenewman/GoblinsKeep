@@ -9,6 +9,7 @@ import { PlayerInputHandler } from "./input/PlayerInputHandler.ts";
 import { ObjectManager } from "./objects/ObjectManager.ts";
 import { PathFinder, type Grid } from "./pathfinder/PathFinder.ts";
 import { Camera } from "./render/Camera.ts";
+import { drawDebug } from "./render/drawDebug.ts";
 import { drawObjects } from "./render/drawObjects.ts";
 import { drawTileMap } from "./render/drawTileMap.ts";
 import {
@@ -377,6 +378,9 @@ const tick = (now: number): void => {
     player.draw(ctx);
     for (const goblin of goblins) {
       goblin.draw(ctx, camera);
+    }
+    if (input.debugMode) {
+      drawDebug(ctx, goblins, camera, TILE_SIZE);
     }
     drawHUD(ctx, {
       keysCollected: mapHandler.getKeysCollected(),
