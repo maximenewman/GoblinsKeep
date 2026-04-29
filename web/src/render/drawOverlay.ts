@@ -32,7 +32,11 @@ export function drawHUD(
   ctx.restore();
 }
 
-/** Title screen using the provided art (text baked in) + "Press Enter to start" prompt. */
+/**
+ * Title screen — draws the castle background full-bleed, then "Goblins Keep"
+ * and the start prompt on top. Mirrors Java's MenuUI.draw which uses
+ * titleScreen.png and writes the title text from code.
+ */
 export function drawMenuScreen(
   ctx: CanvasRenderingContext2D,
   background: HTMLImageElement,
@@ -42,18 +46,26 @@ export function drawMenuScreen(
   ctx.save();
   ctx.drawImage(background, 0, 0, screenWidth, screenHeight);
 
-  ctx.font = PROMPT_FONT;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.lineJoin = "round";
-  ctx.lineWidth = 4;
   ctx.strokeStyle = "black";
+
+  // Java title: y = tileSize * 3 (= 144 in a 768x576 canvas). Our viewport is
+  // 768x432, so the same pixel offset still sits above the castle silhouette.
+  const cx = screenWidth / 2;
+  ctx.font = END_FONT;
+  ctx.lineWidth = 8;
+  ctx.fillStyle = "white";
+  ctx.strokeText("Goblins Keep", cx, 100);
+  ctx.fillText("Goblins Keep", cx, 100);
+
+  ctx.font = PROMPT_FONT;
+  ctx.lineWidth = 4;
   ctx.fillStyle = "white";
   const prompt = "Press Enter to start";
-  const px = screenWidth / 2;
-  const py = screenHeight - 40;
-  ctx.strokeText(prompt, px, py);
-  ctx.fillText(prompt, px, py);
+  ctx.strokeText(prompt, cx, screenHeight - 40);
+  ctx.fillText(prompt, cx, screenHeight - 40);
   ctx.restore();
 }
 

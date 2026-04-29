@@ -63,7 +63,7 @@ const [, , , , titleImage, winImage, loseEnemyImage, loseScoreImage] = await Pro
   objectM.loadSprites(),
   sound.loadAll(),
   document.fonts.ready,
-  loadImage("/UI_img/titleScreenText.png"),
+  loadImage("/UI_img/titleScreen.png"),
   loadImage("/UI_img/win.png"),
   loadImage("/UI_img/end screen (bg).png"),
   loadImage("/UI_img/lose.png"),
