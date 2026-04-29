@@ -37,11 +37,11 @@ describe("Goblin", () => {
       expect(g.collisionArea.height).toBe(23);
     });
 
-    it("starts with onPath and inSight off and LOSradius 120", () => {
+    it("starts with onPath and inSight off and LOSradius 130", () => {
       const g = makeGoblin();
       expect(g.onPath).toBe(false);
       expect(g.inSight).toBe(false);
-      expect(g.LOSradius).toBe(120);
+      expect(g.LOSradius).toBe(130);
     });
   });
 
