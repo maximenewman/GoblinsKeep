@@ -69,18 +69,34 @@ export class PlayerInputHandler {
   }
 
   /**
+   * Releases every movement key. Called on window blur — without it, alt-tabbing
+   * while a direction is held swallows the keyup event and the player keeps
+   * walking until the user re-focuses and taps the same key.
+   */
+  clear(): void {
+    this.up = false;
+    this.down = false;
+    this.left = false;
+    this.right = false;
+  }
+
+  /**
    * Installs keydown/keyup listeners on the given target (window by default)
-   * that route to {@link onKeyDown}/{@link onKeyUp}. Returns a detach function
-   * for cleanup.
+   * that route to {@link onKeyDown}/{@link onKeyUp}. Also clears held keys on
+   * window blur so focus loss doesn't strand the player walking. Returns a
+   * detach function for cleanup.
    */
   attach(target: EventTarget = window): () => void {
     const downListener = (e: Event) => this.onKeyDown((e as KeyboardEvent).code);
     const upListener = (e: Event) => this.onKeyUp((e as KeyboardEvent).code);
+    const blurListener = () => this.clear();
     target.addEventListener("keydown", downListener);
     target.addEventListener("keyup", upListener);
+    target.addEventListener("blur", blurListener);
     return () => {
       target.removeEventListener("keydown", downListener);
       target.removeEventListener("keyup", upListener);
+      target.removeEventListener("blur", blurListener);
     };
   }
 }

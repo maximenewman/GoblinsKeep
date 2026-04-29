@@ -1,3 +1,4 @@
+import { Direction } from "./app/Direction.ts";
 import { GameStatus } from "./app/GameStatus.ts";
 import { MapGenerator, type MapBuilder } from "./app/MapGenerator.ts";
 import { MapHandler, type MessageHandler } from "./app/MapHandler.ts";
@@ -232,6 +233,7 @@ const restart = async (): Promise<void> => {
   const start = spawnState.player ?? { col: 0, row: 0 };
   player.WorldX = start.col * TILE_SIZE;
   player.WorldY = start.row * TILE_SIZE;
+  player.direction = Direction.DOWN;
   camera.targetWorldX = player.WorldX;
   camera.targetWorldY = player.WorldY;
 
@@ -278,6 +280,10 @@ const selectMenuOption = (option: string): void => {
 };
 
 window.addEventListener("keydown", (event) => {
+  // OS-level key repeat would spam the music toggle, the pause flip, and the
+  // menu cursor — every action in this handler is one-shot. Movement keys are
+  // handled by PlayerInputHandler on a separate listener and are unaffected.
+  if (event.repeat) return;
   if (event.code === "KeyM") {
     sound.toggle();
     return;
