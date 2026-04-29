@@ -182,6 +182,8 @@ const INSTRUCTIONS_LINES: readonly string[] = [
   "Collect meat to increase your score",
   "If you step into an acid puddle you will lose score",
   "If the roaming goblins capture you or your score becomes negative you will lose",
+  "Credits: Hugo Najafi, Maxime Nereyabagabo, Arun Paudel, Vamsi Suggu",
+  "Refactor: Maxime Nereyabagabo",
 ];
 
 const optionsFor = (s: GameStatus): readonly string[] => {

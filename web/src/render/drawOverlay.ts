@@ -9,7 +9,7 @@ const HUD_FONT = "40px 'PixelPurl', monospace";
 const TITLE_FONT = "80px 'SuperPixel', 'PixelPurl', monospace";
 const BANNER_FONT = "60px 'SuperPixel', 'PixelPurl', monospace";
 const OPTION_FONT = "40px 'SuperPixel', 'PixelPurl', monospace";
-const BODY_FONT = "25px 'PixelPurl', monospace";
+const BODY_FONT = "28px 'PixelPurl', monospace";
 
 /** Strokes a black border under the white fill — same look as Java's drawTextWithBorder. */
 function drawBorderedText(
@@ -56,15 +56,15 @@ export function drawHUD(
 }
 
 /**
- * Centered cursor menu — mirrors Java's drawCursorOptionsCentered. Renders
- * each option at startTile + i tile rows down, with ">" drawn one tile to
- * the left of the selected one.
+ * Centered cursor menu — mirrors Java's drawCursorOptionsCentered. Each
+ * option baseline starts at startY and stacks downward by one tile; ">" is
+ * drawn one tile to the left of the selected one.
  */
 function drawCursorOptions(
   ctx: CanvasRenderingContext2D,
   options: readonly string[],
   cursor: number,
-  startTile: number,
+  startY: number,
   screenWidth: number,
 ): void {
   ctx.save();
@@ -75,7 +75,7 @@ function drawCursorOptions(
 
   for (let i = 0; i < options.length; i++) {
     const text = options[i];
-    const y = TILE * (startTile + i);
+    const y = startY + TILE * i;
     const textWidth = ctx.measureText(text).width;
     const x = (screenWidth - textWidth) / 2;
     drawBorderedText(ctx, text, x, y, 4);
@@ -108,7 +108,7 @@ export function drawMenuScreen(
   drawBorderedText(ctx, "Goblins Keep", screenWidth / 2, TILE * 3, 6);
   ctx.restore();
 
-  drawCursorOptions(ctx, options, cursor, 8, screenWidth);
+  drawCursorOptions(ctx, options, cursor, TILE * 8, screenWidth);
 }
 
 /**
@@ -133,7 +133,7 @@ export function drawPauseScreen(
   drawBorderedText(ctx, "PAUSED", screenWidth / 2, TILE * 3, 6);
   ctx.restore();
 
-  drawCursorOptions(ctx, options, cursor, 8, screenWidth);
+  drawCursorOptions(ctx, options, cursor, TILE * 8, screenWidth);
 }
 
 /**
@@ -158,16 +158,23 @@ export function drawInstructionsScreen(
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = "white";
-  drawBorderedText(ctx, "INSTRUCTIONS", screenWidth / 2, TILE * 2, 6);
+  drawBorderedText(ctx, "INSTRUCTIONS", screenWidth / 2, TILE * 1.5, 6);
 
   ctx.font = BODY_FONT;
+  // Body lines are tighter than the title — pull line height in to give the
+  // BACK TO MENU cursor room at the bottom even with 15+ instruction lines.
+  const BODY_START_Y = 110;
+  const BODY_LINE_HEIGHT = 28;
   for (let i = 0; i < lines.length; i++) {
-    const y = (TILE / 2) * (8 + i);
-    drawBorderedText(ctx, lines[i], screenWidth / 2, y, 2);
+    drawBorderedText(ctx, lines[i], screenWidth / 2, BODY_START_Y + i * BODY_LINE_HEIGHT, 2);
   }
   ctx.restore();
 
-  drawCursorOptions(ctx, options, cursor, 11, screenWidth);
+  // Cursor sits one tile below the last line, then clamped just above the
+  // canvas bottom so a long instruction list still leaves the option visible.
+  const lastBodyY = BODY_START_Y + (lines.length - 1) * BODY_LINE_HEIGHT;
+  const cursorY = Math.min(lastBodyY + TILE, screenHeight - 24);
+  drawCursorOptions(ctx, options, cursor, cursorY, screenWidth);
 }
 
 /**
@@ -195,5 +202,5 @@ export function drawEndScreen(
   drawBorderedText(ctx, win ? "YOU WON!" : "YOU LOSE", screenWidth / 2, TILE * 2, 6);
   ctx.restore();
 
-  drawCursorOptions(ctx, options, cursor, 9, screenWidth);
+  drawCursorOptions(ctx, options, cursor, TILE * 9, screenWidth);
 }
